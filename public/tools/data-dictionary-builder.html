@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Dictionary Builder - RCM Buddy</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/tools/data-dictionary-builder.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body class="flex flex-col min-h-screen text-gray-800">
+    <header class="bg-gradient-to-r from-blue-600 to-indigo-700 p-4 shadow-lg">
+        <div class="container mx-auto flex flex-col sm:flex-row items-center justify-between">
+            <h1 class="text-white text-3xl font-bold mb-2 sm:mb-0">Data Dictionary Builder</h1>
+            <nav>
+                <ul class="flex space-x-4">
+                    <li><a href="/dashboard.html" class="text-white hover:text-blue-200 transition duration-300">Dashboard</a></li>
+                    <li><a href="/tools.html" class="text-white hover:text-blue-200 transition duration-300">Tools List</a></li>
+                    <li><a href="/tools/data-cleaner.html" class="text-white hover:text-blue-200 transition duration-300">Data Cleaner</a></li>
+                    <li><a href="/tools/validation-engine.html" class="text-white hover:text-blue-200 transition duration-300">Excel Validate</a></li>
+                    <li><a href="/tools/data-dictionary-builder.html" class="text-white hover:text-blue-200 transition duration-300 active">DD Builder</a></li>
+                    <li><a href="#" id="profileLink" class="text-white hover:text-blue-200 transition duration-300">Profile</a></li>
+                    <li><a href="#" id="logoutBtn" class="text-white hover:text-blue-200 transition duration-300 cursor-pointer">Logout</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="flex-grow container mx-auto p-4 sm:p-6 lg:p-8">
+        <section class="bg-white p-6 sm:p-8 rounded-xl shadow-lg mb-8 max-w-screen-xl mx-auto">
+            <h2 class="text-2xl sm:text-3xl font-semibold text-center text-blue-700 mb-4">
+                Build & Manage Custom Data Dictionaries
+            </h2>
+            <p class="text-lg text-gray-700 text-center mb-6">
+                Define, edit, and manage validation rules for your Excel file headers.
+            </p>
+            <div class="max-w-3xl mx-auto text-gray-600 text-base mb-6 p-4 border border-gray-200 rounded-lg bg-gray-50">
+                <p class="font-semibold text-gray-800 mb-2">How it works:</p>
+                <p>You can either **select an existing data dictionary** to modify its rules, or **create a brand new one** by uploading an Excel/CSV file to extract its headers. For each header, you can specify various validation rules. Saved dictionaries are available for use in the "Excel Validate" tool.</p>
+                <ul class="list-disc list-inside mt-3 ml-5">
+                    <li>**Select Existing:** Load a previously saved dictionary for editing.</li>
+                    <li>**Create New:** Upload a file, extract headers, and define rules from scratch.</li>
+                    <li>**Define Rules:** Specify validation types, values, and failure messages per column.</li>
+                    <li>**Save/Update:** Save changes to a new or existing dictionary.</li>
+                </ul>
+            </div>
+
+            <div id="initialSelectionSection" class="max-w-xl mx-auto bg-blue-50 p-6 rounded-lg shadow-md border border-blue-200 mb-8">
+                <h3 class="text-xl font-bold text-blue-700 mb-4">Choose Your Starting Point</h3>
+
+                <div class="mb-6 pb-6 border-b border-blue-300">
+                    <h4 class="text-lg font-bold text-gray-700 mb-2">1. Load Existing Dictionary</h4>
+                    <p class="text-sm text-gray-600 mb-3">Select a dictionary to view or modify its rules.</p>
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <select id="existingDictionarySelect" class="flex-grow p-2 border border-gray-300 rounded-lg bg-white focus:ring-blue-500 focus:border-blue-500">
+                            <option value="">-- Select an Existing Dictionary --</option>
+                            {/* Options will be loaded here by JavaScript */}
+                        </select>
+                        <button type="button" id="loadExistingDictionaryBtn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm transition duration-300">Load for Editing</button>
+                    </div>
+                    <div id="existingDictStatus" class="mt-2 text-sm text-gray-600 hidden"></div>
+                </div>
+
+                <div>
+                    <h4 class="text-lg font-bold text-gray-700 mb-2">2. Create New Dictionary</h4>
+                    <p class="text-sm text-gray-600 mb-3">Upload a new file to define rules for its headers.</p>
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <input type="file" id="excelFile" accept=".xlsx, .xls, .csv"
+                                class="flex-grow mt-1 block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-white focus:outline-none focus:border-blue-500">
+                        <button type="button" id="createNewDictionaryBtn" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm transition duration-300">Start New</button>
+                    </div>
+                    <div id="newDictStatus" class="mt-2 text-sm text-gray-600 hidden"></div>
+                </div>
+                <div class="loader" id="initialLoader"></div>
+            </div>
+            <div class="max-w-3xl mx-auto bg-gray-50 p-6 rounded-lg shadow-md border border-gray-200 mb-8">
+                <h3 class="text-xl font-bold text-gray-700 mb-4">Validation Type Key</h3>
+                <div class="space-y-4 text-gray-700">
+                    <div><strong class="text-blue-600">None:</strong> No specific validation applied.</div>
+                    <div>
+                        <strong class="text-blue-600">Required (Not Blank):</strong> Cell must not be empty. <br>
+                        <span class="text-sm text-gray-500">*Validation Value:* Not applicable (leave blank).</span>
+                    </div>
+                    <div>
+                        <strong class="text-blue-600">Allowed Values (Comma-separated):</strong> Value must match one of specified (case-insensitive). <br>
+                        <span class="text-sm text-gray-500">*Validation Value:* Comma-separated list (e.g., `Yes,No`).</span>
+                    </div>
+                    <div>
+                        <strong class="text-blue-600">Numeric Range (e.g., 0-100):</strong> Value must be a number within range. <br>
+                        <span class="text-sm text-gray-500">*Validation Value:* Min-Max (e.g., `1-100`).</span>
+                    </div>
+                    <div>
+                        <strong class="text-blue-600">Regex Pattern:</strong> Value must match regex. <br>
+                        <span class="text-sm text-gray-500">*Validation Value:* Regular expression (e.g., `^\d{5}$`).</span>
+                    </div>
+                    <div>
+                        <strong class="text-blue-600">Date in Past:</strong> Value must be a valid date in the past. <br>
+                        <span class="text-sm text-gray-500">*Validation Value:* Not applicable (leave blank).</span>
+                    </div>
+                    <div>
+                        <strong class="text-blue-600">Unique Value:</strong> Values in this column must be unique per sheet. <br>
+                        <span class="text-sm text-gray-500">*Validation Value:* Not applicable (leave blank).</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-gray-800 text-white p-4 mt-8">
+        <div class="container mx-auto text-center text-sm">
+            &copy; 2025 RCM Buddy. All rights reserved.
+        </div>
+    </footer>
+
+    <div id="dataDictionaryOverlay" class="full-screen-overlay hidden">
+        <div id="dictionaryBuilderSection" class="modal-content-area">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-green-700">Define Data Dictionary Rules</h3>
+                <button id="closeModalBtn" class="text-gray-500 hover:text-gray-700 text-2xl font-bold focus:outline-none">
+                    &times; </button>
+            </div>
+            <div class="mb-4">
+                <label for="sheetSelector" class="block text-sm font-medium text-gray-700">Select Sheet</label>
+                <select id="sheetSelector" class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                    </select>
+            </div>
+            <div class="mb-4">
+                <label for="dictionaryName" class="block text-sm font-medium text-gray-700">Data Dictionary Name</label>
+                <input type="text" id="dictionaryName" placeholder="e.g., HR Data Dictionary V1" required
+                                class="mt-1 block w-full p-2 border border-gray-300 rounded-md focus:ring-green-500 focus:border-green-500">
+            </div>
+            <div id="headersTableContainer" class="overflow-x-auto relative shadow-md sm:rounded-lg">
+                <table class="w-full text-sm text-left text-gray-500" id="headersTable">
+                    <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3" title="The technical or unique name of the data field as it exists in the database or system.">Column Name</th>
+                            <th scope="col" class="px-6 py-3" title="A clear and concise explanation of what the data element represents, its meaning, and its purpose within the business context.">Definition/Description</th>
+                            <th scope="col" class="px-6 py-3" title="Specifies the type of data stored in the field (e.g., Text/String, Integer, Decimal, Date, Boolean).">Data Type</th>
+                            <th scope="col" class="px-6 py-3" title="The maximum number of characters or digits allowed for the field, or the precision for numerical types.">Length/Size</th>
+                            <th scope="col" class="px-6 py-3" title="Specific patterns or conventions for how the data should be structured (e.g.,YYYY-MM-DD for dates, (###)###-#### for phone numbers).">Format</th>
+                            <th scope="col" class="px-6 py-3" title="The set of valid or permissible values for the data element. This could be a list of codes, a range of numbers, or a reference to a lookup table.">Allowable Values/Domain</th>
+                            <th scope="col" class="px-6 py-3" title="Indicates whether the field must contain data (required/not nullable) or if it can be left empty (optional/nullable).">Nullability</th>
+                            <th scope="col" class="px-6 py-3" title="The system(s) or application(s) from which the data originates or is primarily entered.">Source System(s)</th>
+                            <th scope="col" class="px-6 py-3" title="The system(s), reports, or processes where the data is used, consumed, or integrated.">Target System(s)/Usage</th>
+                            <th scope="col" class="px-6 py-3" title="Any specific organizational policies, logic, or conditions that govern the data's creation, modification, or interpretation.">Business Rules/Constraints</th>
+                            <th scope="col" class="px-6 py-3" title="How this data element connects to other fields or tables within the data model (e.g., 'Foreign key to Products.ProductID').">Relationship to Other Elements/Tables</th>
+                            <th scope="col" class="px-6 py-3" title="The department, team, or individual responsible for the definition, quality, and governance of this data element.">Ownership/Stewardship</th>
+                            <th scope="col" class="px-6 py-3" title="The level of sensitivity of the data, indicating how it should be protected (e.g., Public, Internal, Confidential, Restricted, PII, PHI).">Security Classification</th>
+                            <th scope="col" class="px-6 py-3" title="Specifies the type of validation rule to apply (e.g., Required, Allowed Values, Numeric Range).">Validation Type</th>
+                            <th scope="col" class="px-6 py-3" title="The value or parameter required for the selected validation type (e.g., a comma-separated list, a min-max range, or a regular expression).">Validation Value</th>
+                            <th scope="col" class="px-6 py-3" title="The custom message to display if the validation rule fails for this column.">Failure Message</th>
+                            <th scope="col" class="px-6 py-3" title="The date when this data element's definition or attributes were last modified.">Last Updated Date</th>
+                            <th scope="col" class="px-6 py-3" title="The user or role who last updated this data element's definition.">Updated By</th>
+                            <th scope="col" class="px-6 py-3" title="A version number or identifier to track changes to this data element's definition.">Version</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {/* Table rows will be populated by JavaScript */}
+                    </tbody>
+                </table>
+            </div>
+            <div class="flex flex-col sm:flex-row gap-4 mt-6">
+                <button type="button" id="saveDictionaryBtn"
+                                class="flex-1 w-full justify-center py-3 px-4 border border-transparent rounded-lg shadow-lg text-lg font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition duration-300 ease-in-out transform hover:-translate-y-0.5">
+                    Save Data Dictionary
+                </button>
+                <button type="button" id="printDictionaryBtn"
+                                class="flex-1 w-full justify-center py-3 px-4 border border-transparent rounded-lg shadow-lg text-lg font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-300 ease-in-out transform hover:-translate-y-0.5">
+                    Print Report
+                </button>
+                </div>
+            <div id="saveStatus" class="mt-4 text-center text-sm text-gray-600 hidden"></div>
+        </div>
+    </div>
+
+    <script src="/tools/data-dictionary-builder.js"></script>
+</body>
+</html>

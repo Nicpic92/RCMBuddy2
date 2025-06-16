@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login & Registration - RCM Buddy</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .form-container {
+            backdrop-filter: blur(10px);
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen font-sans">
+
+    <div class="w-full max-w-md p-8 space-y-6 rounded-xl form-container shadow-2xl">
+        <h1 class="text-3xl font-bold text-center text-white">RCM Buddy</h1>
+        
+        <!-- Registration Form (hidden by default) -->
+        <form id="register-form" class="space-y-4 hidden">
+            <h2 class="text-2xl font-semibold text-center text-white">Create an Account</h2>
+            <div>
+                <label for="register-username" class="block text-sm font-medium text-gray-200">Username</label>
+                <input type="text" id="register-username" name="username" required
+                       class="w-full px-3 py-2 mt-1 text-gray-900 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+            <div>
+                <label for="register-email" class="block text-sm font-medium text-gray-200">Email</label>
+                <input type="email" id="register-email" name="email" required
+                       class="w-full px-3 py-2 mt-1 text-gray-900 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+            <div>
+                <label for="register-password" class="block text-sm font-medium text-gray-200">Password</label>
+                <input type="password" id="register-password" name="password" required
+                       class="w-full px-3 py-2 mt-1 text-gray-900 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+            <div>
+                <label for="register-company" class="block text-sm font-medium text-gray-200">Company Name</label>
+                <input type="text" id="register-company" name="company_name" required
+                       class="w-full px-3 py-2 mt-1 text-gray-900 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+            <button type="submit"
+                    class="w-full px-4 py-2 font-bold text-white bg-indigo-600 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                Register
+            </button>
+        </form>
+
+        <!-- Login Form (visible by default) -->
+        <form id="login-form" class="space-y-4">
+            <h2 class="text-2xl font-semibold text-center text-white">Welcome Back!</h2>
+            <div>
+                <label for="login-identifier" class="block text-sm font-medium text-gray-200">Username or Email</label>
+                <input type="text" id="login-identifier" name="identifier" required
+                       class="w-full px-3 py-2 mt-1 text-gray-900 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+            <div>
+                <label for="login-password" class="block text-sm font-medium text-gray-200">Password</label>
+                <input type="password" id="login-password" name="password" required
+                       class="w-full px-3 py-2 mt-1 text-gray-900 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+            <button type="submit"
+                    class="w-full px-4 py-2 font-bold text-white bg-green-600 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                Login
+            </button>
+        </form>
+        
+        <!-- Message area for errors or success -->
+        <div id="message-area" class="text-center font-semibold p-2 rounded-md"></div>
+
+        <!-- Toggle link -->
+        <p class="text-sm text-center text-gray-300">
+            <a href="#" id="toggle-link" class="font-medium text-white hover:underline">Don't have an account? Register here.</a>
+        </p>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const loginForm = document.getElementById('login-form');
+            const registerForm = document.getElementById('register-form');
+            const toggleLink = document.getElementById('toggle-link');
+            const messageArea = document.getElementById('message-area');
+
+            // --- Form Toggle Logic ---
+            toggleLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                const isLoginVisible = !loginForm.classList.contains('hidden');
+                if (isLoginVisible) {
+                    loginForm.classList.add('hidden');
+                    registerForm.classList.remove('hidden');
+                    toggleLink.textContent = 'Already have an account? Login here.';
+                } else {
+                    loginForm.classList.remove('hidden');
+                    registerForm.classList.add('hidden');
+                    toggleLink.textContent = "Don't have an account? Register here.";
+                }
+                messageArea.textContent = '';
+                messageArea.className = 'text-center font-semibold p-2 rounded-md';
+            });
+
+            // --- Message Display Logic ---
+            function showMessage(message, isError = false) {
+                messageArea.textContent = message;
+                if (isError) {
+                    messageArea.className = 'text-center font-semibold p-2 rounded-md bg-red-500 text-white';
+                } else {
+                    messageArea.className = 'text-center font-semibold p-2 rounded-md bg-green-500 text-white';
+                }
+            }
+            
+            // --- Registration Form Submission ---
+            registerForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const username = document.getElementById('register-username').value;
+                const email = document.getElementById('register-email').value;
+                const password = document.getElementById('register-password').value;
+                const company_name = document.getElementById('register-company').value;
+                
+                try {
+                    const response = await fetch('/api/register', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username, email, password, company_name })
+                    });
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        showMessage('Registration successful! Please log in.', false);
+                        // Automatically switch to the login form
+                        loginForm.classList.remove('hidden');
+                        registerForm.classList.add('hidden');
+                        toggleLink.textContent = "Don't have an account? Register here.";
+                    } else {
+                        showMessage(data.message || 'An error occurred.', true);
+                    }
+                } catch (error) {
+                    showMessage('Network error. Please try again.', true);
+                }
+            });
+
+            // --- Login Form Submission ---
+            loginForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const identifier = document.getElementById('login-identifier').value;
+                const password = document.getElementById('login-password').value;
+
+                try {
+                    const response = await fetch('/api/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ identifier, password })
+                    });
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        localStorage.setItem('jwtToken', data.token);
+                        // Redirect to the dashboard upon successful login
+                        window.location.href = '/dashboard.html';
+                    } else {
+                        showMessage(data.message || 'Login failed.', true);
+                    }
+                } catch (error) {
+                    showMessage('Network error. Please try again.', true);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

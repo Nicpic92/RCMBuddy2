@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RCM Buddy - Lag Report Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            color: #333;
+        }
+        .card {
+            background-color: #ffffff;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .btn-primary {
+            background-color: #4f46e5;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: background-color 0.3s ease;
+        }
+        .btn-primary:hover {
+            background-color: #4338ca;
+        }
+        .message-box {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-top: 1rem;
+            font-weight: 500;
+        }
+        .message-box.success {
+            background-color: #d1fae5;
+            color: #065f46;
+            border: 1px solid #10b981;
+        }
+        .message-box.error {
+            background-color: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #ef4444;
+        }
+        .message-box.info {
+            background-color: #e0f2fe;
+            color: #0369a1;
+            border: 1px solid #38bdf8;
+        }
+        input[type="file"] {
+            border: 2px dashed #d1d5db;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.3s ease;
+        }
+        input[type="file"]:hover {
+            border-color: #9ca3af;
+        }
+        /* Table styles for dashboard display */
+        .dashboard-table-container {
+            max-height: 500px; /* Limit height for scrollability */
+            overflow-y: auto;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+        }
+        .dashboard-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+        .dashboard-table th, .dashboard-table td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .dashboard-table th {
+            background-color: #f8fafc;
+            font-weight: 600;
+            color: #475569;
+            position: sticky;
+            top: 0; /* Makes header sticky during scroll */
+            z-index: 1;
+        }
+        .dashboard-table tbody tr:hover {
+            background-color: #f0f4f8;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+    <!-- Navigation Bar -->
+    <nav class="bg-indigo-600 text-white p-4 shadow-md flex justify-between items-center">
+        <div class="text-xl font-bold">RCM Buddy</div>
+        <div class="flex items-center space-x-4">
+            <span id="navUsername" class="font-medium"></span>
+            <a href="/dashboard.html" class="hover:text-indigo-200 transition-colors">Dashboard</a>
+            <a href="/tools.html" class="hover:text-indigo-200 transition-colors">Tools</a>
+            <button id="logoutButton" class="bg-indigo-700 hover:bg-indigo-800 text-white py-2 px-4 rounded-md transition-colors">Logout</button>
+        </div>
+    </nav>
+
+    <main class="flex-grow container mx-auto p-6">
+        <h1 class="text-4xl font-extrabold text-center text-gray-800 mb-8">Lag Report Dashboard</h1>
+
+        <div class="max-w-6xl mx-auto card">
+            <p class="text-gray-700 mb-6">Upload your "Lag Detail Report" (Excel/CSV) to view its data in a dashboard format.</p>
+
+            <div class="mb-6">
+                <label for="lagReportFile" class="block text-lg font-semibold text-gray-800 mb-2">Select Lag Detail Report (Excel/CSV)</label>
+                <input type="file" id="lagReportFile" accept=".xlsx,.xls,.csv" class="w-full">
+            </div>
+
+            <button id="displayDashboardButton" class="btn-primary w-full flex items-center justify-center space-x-2">
+                <span id="buttonText">Display Dashboard</span>
+                <div id="loadingSpinner" class="spinner hidden"></div>
+            </button>
+
+            <div id="messageBox" class="message-box hidden"></div>
+        </div>
+
+        <div id="dashboardDisplayArea" class="max-w-6xl mx-auto card mt-6 hidden">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Lag Report Data</h2>
+            <div class="dashboard-table-container">
+                <table id="lagReportTable" class="dashboard-table">
+                    <thead>
+                        <tr></tr> <!-- Headers will go here -->
+                    </thead>
+                    <tbody>
+                        <!-- Data rows will go here -->
+                    </tbody>
+                </table>
+            </div>
+            <p id="rowCount" class="text-gray-600 mt-4"></p>
+        </div>
+    </main>
+
+    <script>
+        // Function to display messages in a dedicated box
+        function displayMessage(message, type) {
+            const messageBox = document.getElementById('messageBox');
+            messageBox.textContent = message;
+            messageBox.className = `message-box ${type}`; // Add classes for styling
+            messageBox.classList.remove('hidden'); // Show the box
+        }
+
+        // Function to hide messages
+        function hideMessage() {
+            document.getElementById('messageBox').classList.add('hidden');
+        }
+
+        // Function to show/hide loading spinner
+        function setLoading(isLoading) {
+            const buttonText = document.getElementById('buttonText');
+            const loadingSpinner = document.getElementById('loadingSpinner');
+            if (isLoading) {
+                buttonText.textContent = 'Processing...';
+                loadingSpinner.classList.remove('hidden');
+                document.getElementById('displayDashboardButton').disabled = true;
+            } else {
+                buttonText.textContent = 'Display Dashboard';
+                loadingSpinner.classList.add('hidden');
+                document.getElementById('displayDashboardButton').disabled = false;
+            }
+        }
+
+        // Function to set up navigation with user details
+        async function setupNavigation() {
+            // Use 'jwtToken' for consistency with index.html
+            const token = localStorage.getItem('jwtToken');
+            if (!token) {
+                window.location.href = '/';
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/protected', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const userData = await response.json();
+                    if (userData && userData.user) {
+                        document.getElementById('navUsername').textContent = `Hello, ${userData.user.username}`;
+                    } else {
+                        console.error('User data missing from protected endpoint response');
+                        displayMessage('Failed to load user data. Please log in again.', 'error');
+                        localStorage.removeItem('jwtToken');
+                        setTimeout(() => { window.location.href = '/'; }, 1500);
+                    }
+                } else if (response.status === 401) {
+                    displayMessage('Session expired. Please log in again.', 'error');
+                    localStorage.removeItem('jwtToken');
+                    setTimeout(() => { window.location.href = '/'; }, 1500);
+                } else {
+                    const errorData = await response.json();
+                    console.error('Error fetching user data:', errorData.message || response.statusText);
+                    displayMessage(`Error: ${errorData.message || 'Failed to load user data.'}`, 'error');
+                    setTimeout(() => { window.location.href = '/'; }, 1500);
+                }
+            } catch (error) {
+                console.error('Network or authentication error:', error);
+                displayMessage('Network error. Please try again.', 'error');
+                setTimeout(() => { window.location.href = '/'; }, 1500);
+            }
+        }
+
+        // Logout functionality
+        document.getElementById('logoutButton').addEventListener('click', () => {
+            localStorage.removeItem('jwtToken');
+            window.location.href = '/';
+        });
+
+        // Function to read an Excel/CSV file and display its contents
+        function readFileAndDisplay(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        const firstSheetName = workbook.SheetNames[0];
+                        const worksheet = workbook.Sheets[firstSheetName];
+                        
+                        // Convert to array of arrays (raw data for table)
+                        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+                        if (jsonData.length === 0) {
+                            reject('File is empty or contains no readable data.');
+                            return;
+                        }
+
+                        // Assume first row is headers
+                        const headers = jsonData[0];
+                        const rows = jsonData.slice(1);
+
+                        const tableHead = document.getElementById('lagReportTable').querySelector('thead tr');
+                        const tableBody = document.getElementById('lagReportTable').querySelector('tbody');
+                        const rowCountElement = document.getElementById('rowCount');
+
+                        tableHead.innerHTML = ''; // Clear old headers
+                        tableBody.innerHTML = ''; // Clear old data
+
+                        // Populate headers
+                        headers.forEach(header => {
+                            const th = document.createElement('th');
+                            th.textContent = header;
+                            tableHead.appendChild(th);
+                        });
+
+                        // Populate data rows
+                        rows.forEach(rowData => {
+                            const tr = document.createElement('tr');
+                            rowData.forEach(cellData => {
+                                const td = document.createElement('td');
+                                td.textContent = cellData;
+                                tr.appendChild(td);
+                            });
+                            tableBody.appendChild(tr);
+                        });
+
+                        document.getElementById('dashboardDisplayArea').classList.remove('hidden');
+                        rowCountElement.textContent = `Displaying ${rows.length} rows.`;
+                        resolve();
+
+                    } catch (error) {
+                        reject('Error parsing file: ' + error.message);
+                    }
+                };
+                reader.onerror = (error) => {
+                    reject('FileReader error: ' + error.message);
+                };
+                reader.readAsArrayBuffer(file);
+            });
+        }
+
+        document.getElementById('displayDashboardButton').addEventListener('click', async () => {
+            hideMessage(); // Clear previous messages
+            setLoading(true); // Show loading spinner
+            document.getElementById('dashboardDisplayArea').classList.add('hidden'); // Hide previous dashboard
+
+            const lagReportFile = document.getElementById('lagReportFile').files[0];
+
+            if (!lagReportFile) {
+                displayMessage('Please select a Lag Detail Report to display.', 'error');
+                setLoading(false);
+                return;
+            }
+
+            try {
+                await readFileAndDisplay(lagReportFile);
+                displayMessage('Lag Report loaded and displayed successfully!', 'success');
+            } catch (error) {
+                console.error('Error displaying dashboard:', error);
+                displayMessage(`Error displaying dashboard: ${error}`, 'error');
+            } finally {
+                setLoading(false); // Hide loading spinner
+            }
+        });
+
+        // Initialize navigation on page load
+        document.addEventListener('DOMContentLoaded', setupNavigation);
+    </script>
+</body>
+</html>

@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel Buddy - Data Cleaner</title>
+    <!-- Tailwind CSS CDN for modern styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts - Inter for clean typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Light background for the page */
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen text-gray-800">
+    <!-- Header Section: Consistent navigation across the app -->
+    <header class="bg-gradient-to-r from-blue-600 to-indigo-700 p-4 shadow-lg">
+        <div class="container mx-auto flex flex-col sm:flex-row items-center justify-between">
+            <h1 class="text-white text-3xl font-bold mb-2 sm:mb-0">Data Cleaner</h1>
+            <nav>
+                <ul class="flex space-x-4">
+                    <li><a href="/dashboard.html" class="text-white hover:text-blue-200 transition duration-300">Dashboard</a></li>
+                    <li><a href="/tools.html" class="text-white hover:text-blue-200 transition duration-300">Tools List</a></li>
+                    <li><a href="#" id="profileLink" class="text-white hover:text-blue-200 transition duration-300">Profile</a></li>
+                    <li><a href="#" id="logoutBtn" class="text-white hover:text-blue-200 transition duration-300 cursor-pointer">Logout</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content Section: Central area for the tool's functionality -->
+    <main class="flex-grow container mx-auto p-4 sm:p-6 lg:p-8">
+        <section class="bg-white p-6 sm:p-8 rounded-xl shadow-lg mb-8">
+            <h2 class="text-2xl sm:text-3xl font-semibold text-center text-blue-700 mb-4">
+                Clean Your Excel Data Automatically
+            </h2>
+            <p class="text-lg text-gray-700 text-center mb-6">
+                Upload your Excel file to remove duplicates, fix common formatting errors, and standardize data.
+            </p>
+            <div class="max-w-xl mx-auto text-gray-600 text-base mb-6 p-4 border border-gray-200 rounded-lg bg-gray-50">
+                <p class="font-semibold text-gray-800 mb-2">About This Tool:</p>
+                <p>The **Data Cleaner** is designed to quickly and efficiently prepare your Excel spreadsheets for analysis or further use. It automates common data hygiene tasks that are often tedious and time-consuming when done manually. Simply upload your `.xlsx` or `.xls` file, select the cleaning options you need, and let Excel Buddy handle the rest. You'll receive a summary of the changes made and a link to download your freshly cleaned file.</p>
+                <ul class="list-disc list-inside mt-3">
+                    <li>**Remove Duplicate Rows:** Eliminates entire rows that have identical content, ensuring unique records.</li>
+                    <li>**Trim Extra Spaces:** Cleans up leading, trailing, and excessive internal spaces within cells, improving consistency.</li>
+                    <li>**Standardize Text Case:** Converts text to a consistent format (e.g., Proper Case/Title Case) for uniform appearance and easier comparisons.</li>
+                </ul>
+                <p class="mt-3">This tool helps maintain data integrity and accuracy, saving you valuable time and effort in data preparation.</p>
+            </div>
+
+            <div class="max-w-xl mx-auto bg-blue-50 p-6 rounded-lg shadow-md border border-blue-200">
+                <h3 class="text-xl font-bold text-blue-600 mb-4">Upload Your Excel File</h3>
+                <form id="uploadForm" class="space-y-4">
+                    <div>
+                        <label for="excelFile" class="block text-sm font-medium text-gray-700">Select File (.xlsx, .xls)</label>
+                        <input type="file" id="excelFile" name="excelFile" accept=".xlsx, .xls" required
+                               class="mt-1 block w-full text-sm text-gray-900 border border-gray-300 rounded-lg cursor-pointer bg-white focus:outline-none focus:border-blue-500">
+                    </div>
+                    <div>
+                        <label for="cleaningOptions" class="block text-sm font-medium text-gray-700">Cleaning Options:</label>
+                        <div class="mt-2 space-y-2">
+                            <div class="flex items-center">
+                                <input id="removeDuplicates" name="removeDuplicates" type="checkbox" checked
+                                       class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                                <label for="removeDuplicates" class="ml-2 block text-sm text-gray-900">Remove Duplicate Rows</label>
+                            </div>
+                            <div class="flex items-center">
+                                <input id="trimSpaces" name="trimSpaces" type="checkbox" checked
+                                       class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                                <label for="trimSpaces" class="ml-2 block text-sm text-gray-900">Trim Extra Spaces</label>
+                            </div>
+                            <div class="flex items-center">
+                                <input id="standardizeText" name="standardizeText" type="checkbox"
+                                       class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                                <label for="standardizeText" class="ml-2 block text-sm text-gray-900">Standardize Text Case (e.g., Proper Case)</label>
+                            </div>
+                        </div>
+                    </div>
+                    <button type="submit" id="cleanButton"
+                            class="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-lg text-lg font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-300 ease-in-out transform hover:-translate-y-0.5">
+                        Clean Data
+                    </button>
+                </form>
+
+                <!-- Status Message Display -->
+                <div id="statusMessage" class="mt-4 text-center text-gray-700 hidden"></div>
+
+                <!-- Cleaning Summary Section (hidden until results are available) -->
+                <div id="summarySection" class="mt-4 p-4 bg-blue-100 rounded-lg hidden">
+                    <p class="font-semibold text-blue-800 mb-2">Cleaning Summary:</p>
+                    <ul class="text-blue-700 text-sm list-disc list-inside">
+                        <li id="summaryDuplicates"></li>
+                        <li id="summarySpaces"></li>
+                        <li id="summaryText"></li>
+                    </ul>
+                </div>
+
+                <!-- Download Section (hidden until file is ready) -->
+                <div id="downloadSection" class="mt-6 text-center hidden">
+                    <p class="text-green-700 font-semibold mb-3">Data Cleaning Complete!</p>
+                    <a id="downloadLink" href="#" download="cleaned_data.xlsx"
+                       class="inline-block bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-full shadow-lg transition duration-300 ease-in-out transform hover:-translate-y-0.5">
+                        Download Cleaned File
+                    </a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer Section -->
+    <footer class="bg-gray-800 text-white p-4 mt-8">
+        <div class="container mx-auto text-center text-sm">
+            &copy; 2025 Excel Buddy. All rights reserved.
+        </div>
+    </footer>
+
+    <script>
+        // --- Authentication Check on Page Load ---
+        document.addEventListener('DOMContentLoaded', async () => {
+            const token = localStorage.getItem('jwtToken'); // Get JWT from local storage
+
+            // If no token exists, redirect to the login page (index.html)
+            if (!token) {
+                window.location.href = '/';
+                return;
+            }
+
+            // Optional: Re-validate token with a protected backend endpoint
+            // This ensures the session is still active and valid
+            try {
+                const response = await fetch('/api/protected', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}` // Send token for validation
+                    }
+                });
+
+                if (!response.ok) {
+                    // If validation fails (e.g., token expired/invalid), clear token and redirect
+                    localStorage.removeItem('jwtToken');
+                    window.location.href = '/';
+                }
+            } catch (error) {
+                // Handle network errors during token validation
+                console.error('Error verifying token on Data Cleaner page:', error);
+                localStorage.removeItem('jwtToken'); // Assume token is bad or server unreachable
+                window.location.href = '/';
+            }
+        });
+
+        // --- Logout Functionality ---
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            localStorage.removeItem('jwtToken'); // Remove JWT from local storage
+            window.location.href = '/'; // Redirect to login page
+        });
+
+        // --- Profile Link Placeholder ---
+        document.getElementById('profileLink').addEventListener('click', (e) => {
+            e.preventDefault(); // Prevent default link behavior
+            alert('This would navigate to a detailed user profile page or open a modal.');
+        });
+
+        // --- Data Cleaner Tool Core Logic ---
+        const uploadForm = document.getElementById('uploadForm');
+        const excelFile = document.getElementById('excelFile');
+        const cleanButton = document.getElementById('cleanButton');
+        const statusMessage = document.getElementById('statusMessage');
+        const summarySection = document.getElementById('summarySection');
+        const summaryDuplicates = document.getElementById('summaryDuplicates');
+        const summarySpaces = document.getElementById('summarySpaces');
+        const summaryText = document.getElementById('summaryText');
+        const downloadSection = document.getElementById('downloadSection');
+        const downloadLink = document.getElementById('downloadLink');
+
+        uploadForm.addEventListener('submit', async (e) => {
+            e.preventDefault(); // Prevent default form submission and page reload
+
+            // Reset UI for new submission
+            statusMessage.textContent = 'Processing your file... This may take a moment.';
+            statusMessage.className = 'mt-4 text-center text-gray-700'; // Show and set default color
+            summarySection.classList.add('hidden'); // Hide previous summary
+            downloadSection.classList.add('hidden'); // Hide previous download link
+            cleanButton.disabled = true; // Disable button to prevent multiple submissions
+
+            const file = excelFile.files[0]; // Get the selected file
+            if (!file) {
+                statusMessage.textContent = 'Please select an Excel file to upload.';
+                statusMessage.className = 'mt-4 text-center text-red-700';
+                cleanButton.disabled = false; // Re-enable button
+                return;
+            }
+
+            // Create a FormData object to send the file and checkbox options
+            const formData = new FormData();
+            formData.append('excelFile', file); // Append the actual file
+            formData.append('removeDuplicates', document.getElementById('removeDuplicates').checked);
+            formData.append('trimSpaces', document.getElementById('trimSpaces').checked);
+            formData.append('standardizeText', document.getElementById('standardizeText').checked);
+
+            try {
+                const token = localStorage.getItem('jwtToken'); // Get the JWT for authentication
+                if (!token) {
+                    throw new Error('User not authenticated. Please log in again.');
+                }
+
+                // Send the FormData to your Netlify Function for cleaning
+                const response = await fetch('/api/clean-excel', { // <-- TARGETS YOUR BACKEND FUNCTION
+                    method: 'POST',
+                    headers: {
+                        // IMPORTANT: Do NOT manually set 'Content-Type': 'multipart/form-data'.
+                        // The browser sets it automatically with the correct 'boundary' when using FormData.
+                        'Authorization': `Bearer ${token}` // Include the JWT for authentication
+                    },
+                    body: formData // The FormData object directly
+                });
+
+                const result = await response.json(); // Parse the JSON response from the backend
+
+                if (response.ok) {
+                    statusMessage.textContent = 'File processed successfully!';
+                    statusMessage.className = 'mt-4 text-center text-green-700';
+
+                    // Display the cleaning summary returned by the backend
+                    summaryDuplicates.textContent = `Removed Duplicate Rows: ${result.summary.removedDuplicates}`;
+                    summarySpaces.textContent = `Trimmed Extra Spaces: ${result.summary.trimmedSpaces}`;
+                    summaryText.textContent = `Standardized Text Cases: ${result.summary.standardizedText}`;
+                    summarySection.classList.remove('hidden'); // Show the summary section
+
+                    // Convert the base64-encoded cleaned file from the backend into a Blob
+                    // A Blob is a file-like object of immutable, raw data.
+                    const binaryString = atob(result.cleanedFileBase64); // Decode base64 string to binary string
+                    const len = binaryString.length;
+                    const bytes = new Uint8Array(len); // Create a Uint8Array to hold raw byte data
+                    for (let i = 0; i < len; i++) {
+                        bytes[i] = binaryString.charCodeAt(i); // Populate the array with byte values
+                    }
+                    // Create a Blob from the Uint8Array with the correct Excel MIME type
+                    const blob = new Blob([bytes], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }); // MIME type for .xlsx
+                    const url = URL.createObjectURL(blob); // Create a URL for the Blob (temporary local URL)
+
+                    // Set the download link properties
+                    downloadLink.href = url; // Assign the Blob URL to the link
+                    downloadLink.download = result.fileName; // Suggest a filename for download
+                    downloadSection.classList.remove('hidden'); // Show the download section
+
+                } else {
+                    // Handle errors returned from the backend (e.g., 400 Bad Request, 500 Internal Server Error)
+                    statusMessage.textContent = `Error: ${result.message || 'Failed to process file.'}`;
+                    statusMessage.className = 'mt-4 text-center text-red-700';
+                    console.error('Backend error response:', result.error || result.message);
+                }
+            } catch (error) {
+                // Handle network errors or issues before the backend call
+                statusMessage.textContent = `Network or authentication error: ${error.message}`;
+                statusMessage.className = 'mt-4 text-center text-red-700';
+                console.error('Frontend fetch error:', error);
+            } finally {
+                cleanButton.disabled = false; // Always re-enable the button after processing
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,218 @@
+/* public/tools/validation-engine.css */
+
+/* General Body and Main Content Styling */
+body {
+    font-family: 'Inter', sans-serif; /* Ensures Google Font is applied */
+    @apply bg-gray-50; /* A very light grey background for the whole page */
+}
+
+main {
+    @apply flex-grow container mx-auto p-4 sm:p-6 lg:p-8; /* Centers content with responsive padding */
+}
+
+section {
+    @apply bg-white p-6 sm:p-8 rounded-xl shadow-lg mb-8; /* White background with shadow and rounded corners */
+}
+
+/* Loader Styling (consistent across tools) */
+.loader {
+    border: 4px solid #f3f3f3; /* Light grey border */
+    border-top: 4px solid #3498db; /* Blue border for the spinning part */
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite; /* Animation for spinning effect */
+    margin: 20px auto;
+    display: none; /* Hidden by default, shown by JavaScript */
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Status Message Styles (consistent across tools) */
+.text-gray-600 { /* For info messages */
+    color: #4a5568;
+}
+
+.text-red-600 { /* For error messages */
+    color: #e53e3e;
+}
+
+.text-green-600 { /* For success messages */
+    color: #38a169;
+}
+
+/* Analysis Results Section Styling */
+#results {
+    @apply mt-8; /* Top margin for spacing */
+}
+
+#overallCounts {
+    @apply bg-gray-100 p-4 rounded-lg shadow-inner mb-6; /* Light grey background for overall counts */
+}
+
+/* Sheet Summary and Issues Table */
+.sheet-summary {
+    @apply bg-gray-50 border border-gray-200 p-4 sm:p-6 rounded-lg shadow-sm mt-6; /* Styled box for each sheet's summary */
+}
+
+.sheet-summary h3 {
+    @apply text-xl font-bold text-gray-800 mb-3; /* Sheet title styling */
+}
+
+.sheet-summary ul {
+    @apply list-none p-0; /* Removes default list styling */
+}
+
+.sheet-summary ul li {
+    @apply mb-1 text-gray-700; /* List item spacing and color */
+}
+
+.sheet-summary ul li strong {
+    @apply text-gray-900; /* Bold text for labels */
+}
+
+/* Issue Count Highlighting */
+.issue-count-error {
+    @apply text-red-600 font-bold; /* Red for error counts */
+}
+
+.issue-count-ok {
+    @apply text-green-600 font-bold; /* Green for zero/ok counts */
+}
+
+/* Results Table (Detailed per column) */
+.results-table {
+    @apply w-full border-collapse mt-4 text-sm; /* Full width, collapse borders, smaller text */
+}
+
+.results-table th, .results-table td {
+    @apply border border-gray-300 p-2 text-left; /* Border, padding, left alignment */
+}
+
+.results-table th {
+    @apply bg-gray-100 font-semibold text-gray-700; /* Header background and font */
+}
+
+.results-table tbody tr:nth-child(even) {
+    @apply bg-gray-50; /* Zebra striping for readability */
+}
+
+.results-table td input[type="checkbox"] {
+    @apply ml-2; /* Margin for checkboxes */
+}
+
+/* Summary Report Container and Styles */
+#summaryReportContainer {
+    @apply bg-white p-6 rounded-xl shadow-lg mt-8; /* Similar style to the main section */
+}
+
+.summary-report-title {
+    @apply text-3xl font-bold text-center text-blue-800 mb-3; /* Main report title */
+}
+
+.summary-report-subtitle {
+    @apply text-lg text-center text-gray-600 mb-2; /* Subtitles like file name and date */
+}
+
+.summary-table {
+    @apply w-full border-collapse mt-6; /* Full width, collapse borders */
+}
+
+.summary-table th, .summary-table td {
+    @apply border border-gray-300 p-3 text-left; /* Borders, padding, left alignment */
+}
+
+.summary-table th {
+    @apply bg-blue-50 font-semibold text-blue-800; /* Header background and font */
+}
+
+.summary-table .column-header {
+    min-width: 150px; /* Ensures enough space for column names */
+}
+
+.summary-table .issue-count {
+    @apply text-center font-medium; /* Centered issue counts */
+}
+
+.summary-table .status-pass {
+    @apply text-green-700 font-bold text-center; /* Green for PASS status */
+}
+
+.summary-table .status-fail {
+    @apply text-red-700 font-bold text-center; /* Red for FAIL status */
+}
+
+.summary-table .status-ignored {
+    @apply text-yellow-600 font-bold text-center; /* Amber/Yellow for OVERRIDDEN status */
+}
+
+/* Overall Summary Box within Report */
+.overall-summary {
+    @apply bg-blue-50 p-5 rounded-lg shadow-md border border-blue-200 mt-6; /* Light blue box for overall summary */
+}
+
+.overall-summary p {
+    @apply text-lg mb-2 text-blue-900; /* Text style for summary points */
+}
+
+.overall-summary strong {
+    @apply text-blue-900; /* Bold important numbers in summary */
+}
+
+/* Print and Export Buttons */
+.print-buttons {
+    @apply flex justify-center gap-4 mt-8 print-hidden; /* Centered buttons, hidden when printing */
+}
+
+.print-buttons button {
+    @apply px-6 py-3 rounded-lg font-semibold transition duration-300 ease-in-out transform hover:-translate-y-1 shadow-md; /* Button base styles */
+}
+
+.print-button {
+    @apply bg-blue-600 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500;
+}
+
+.export-button {
+    @apply bg-green-600 text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500;
+}
+
+/* Utility classes to hide elements */
+.hidden {
+    display: none !important;
+}
+
+/* Print-specific styles to hide elements not needed in printout */
+@media print {
+    .print-hidden {
+        display: none !important;
+    }
+    body {
+        background-color: #fff !important; /* White background for printing */
+        color: #000 !important; /* Black text for printing */
+        -webkit-print-color-adjust: exact; /* For better color printing */
+        print-color-adjust: exact;
+    }
+    main {
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    section {
+        box-shadow: none !important;
+        border: none !important;
+        padding: 0 !important;
+    }
+    .container {
+        width: 100% !important;
+        max-width: none !important;
+    }
+    .summary-table, .summary-table th, .summary-table td {
+        border: 1px solid #000 !important; /* Ensure black borders for tables in print */
+    }
+    .overall-summary {
+        background-color: #f0f8ff !important; /* Light blue background for summary in print */
+        border: 1px solid #a0daeb !important;
+    }
+}

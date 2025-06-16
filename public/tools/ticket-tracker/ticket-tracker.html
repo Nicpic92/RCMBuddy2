@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Universal Ticket Tracker - RCM Buddy</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts - Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Link to the external CSS file -->
+    <link rel="stylesheet" href="ticket-tracker.css">
+    <!-- Link to the xlsx library for reading Excel files -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        /* This style block is for any page-specific Tailwind overrides or custom utilities if needed. */
+        /* For consistency, general styling should be in ticket-tracker.css */
+
+        /* Styles for individual tool cards on the dashboard (mimicking dashboard.html/tools.html) */
+        .tool-card.ticket-tracker {
+            border-color: theme('colors.orange.200'); /* Using orange for contrast */
+            background-color: theme('colors.orange.50');
+        }
+        .tool-card.ticket-tracker h2, .tool-card.ticket-tracker h3 { color: theme('colors.orange.600'); } /* Adjusted for h2 or h3 in cards */
+        .tool-card.ticket-tracker a { background-color: theme('colors.orange.500'); }
+        .tool-card.ticket-tracker a:hover { background-color: theme('colors.orange.600'); }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen text-gray-800" onload="loadSavedData(); verifyAndSetupUser();">
+    <!-- Header Section: Consistent navigation across the app -->
+    <header class="bg-gradient-to-r from-blue-600 to-indigo-700 p-4 shadow-lg">
+        <div class="container mx-auto flex flex-col sm:flex-row items-center justify-between">
+            <h1 class="text-white text-3xl font-bold mb-2 sm:mb-0">Universal Ticket Tracker</h1>
+            <nav>
+                <ul class="flex space-x-4">
+                    <li><a href="/dashboard.html" class="text-white hover:text-blue-200 transition duration-300">Dashboard</a></li>
+                    <li><a href="/tools.html" class="text-white hover:text-blue-200 transition duration-300">Tools List</a></li>
+                    <li><a href="/tools/data-cleaner.html" class="text-white hover:text-blue-200 transition duration-300">Data Cleaner</a></li>
+                    <li><a href="/tools/validation-engine.html" class="text-white hover:text-blue-200 transition duration-300">Excel Validate</a></li>
+                    <li><a href="/tools/data-dictionary-builder.html" class="text-white hover:text-blue-200 transition duration-300">DD Builder</a></li>
+                    <li><a href="/tools/ticket-tracker/ticket-tracker.html" class="text-white hover:text-blue-200 transition duration-300 active">Tracker</a></li>
+                    <li><a href="#" id="profileLink" class="text-white hover:text-blue-200 transition duration-300">Profile</a></li>
+                    <li><a href="#" id="logoutBtn" class="text-white hover:text-blue-200 transition duration-300 cursor-pointer">Logout</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content Section -->
+    <main class="flex-grow container mx-auto p-4 sm:p-6 lg:p-8">
+        <section class="bg-white p-6 sm:p-8 rounded-xl shadow-lg mb-8">
+            <!-- The old h1 and status div content is now part of the main section -->
+            <h2 class="text-2xl sm:text-3xl font-semibold text-center text-blue-700 mb-4">
+                Your Universal Ticket Tracker
+            </h2>
+            <div id="status" class="bg-blue-50 text-blue-800 p-3 rounded-lg border-l-4 border-blue-500 mb-6">Checking for saved data...</div>
+
+            <!-- File upload section -->
+            <div class="container">
+                <h3>Load New Excel File (Current Report)</h3>
+                <p>This will overwrite any current report data saved in your browser.</p>
+                <input type="file" id="fileInput" accept=".xlsx, .xls">
+                <button onclick="clearSavedData()">Clear Current Report Data</button>
+            </div>
+
+            <!-- NEW: Main Report Sheet Selection -->
+            <div class="container" id="sheetSelectionContainer" style="display: none;">
+                <h4>Select Main Report Sheet:</h4>
+                <div class="report-options-line">
+                    <label for="mainSheetSelect">Choose Sheet:</label>
+                    <select id="mainSheetSelect" onchange="handleSheetSelection(this.value)">
+                        <!-- Options will be dynamically populated by JavaScript -->
+                    </select>
+                </div>
+            </div>
+
+            <!-- NEW: Main ID Type Selection -->
+            <div class="container" id="mainIdSelectionContainer" style="display: none;">
+                <h4>Select Main ID Column:</h4>
+                <div class="report-options-line">
+                    <label for="mainIdSelect">Choose ID Column:</label>
+                    <select id="mainIdSelect" onchange="handleMainIdSelection(this.value)">
+                        <!-- Options will be dynamically populated by JavaScript -->
+                    </select>
+                </div>
+            </div>
+
+            <!-- Print options section, hidden by default until data is loaded -->
+            <div class="container" id="printFiltersContainer" style="display: none;">
+                <h4>Print Options:</h4>
+                <div class="print-options-line">
+                    <label for="printPlanFilterInput">Filter by Plan:</label>
+                    <input type="text" id="printPlanFilterInput" placeholder="Enter Plan name (optional)..." oninput="togglePrintButtonVisibility()">
+                </div>
+                <div class="print-options-line">
+                    <label for="printAssignedToFilterInput">Filter by Assigned To:</label>
+                    <input type="text" id="printAssignedToFilterInput" placeholder="Enter name (optional)..." oninput="togglePrintButtonVisibility()">
+                </div>
+                <div class="print-options-line">
+                    <label for="printPriorityFilterInput">Filter by Priority:</label>
+                    <select id="printPriorityFilterInput" onchange="togglePrintButtonVisibility()">
+                        <!-- Options populated dynamically by JS -->
+                    </select>
+                </div>
+                <div class="print-options-line">
+                    <label for="printSortByInput">Sort by:</label>
+                    <select id="printSortByInput" onchange="togglePrintButtonVisibility()">
+                        <option value="">Default Sorting</option>
+                    </select>
+                </div>
+                <div class="print-options-line">
+                    <label><input type="checkbox" id="printGroupByPlanCheckbox"> Group by Plan</label>
+                </div>
+                <div class="print-options-line">
+                    <label>Hide Statuses:</label>
+                    <div id="dynamicPrintStatusCheckboxes">
+                        <!-- Dynamic checkboxes for print statuses will be inserted here by JavaScript -->
+                    </div>
+                </div>
+                <button id="printPriorityButton" onclick="handlePrint()">Print</button>
+            </div>
+
+            <hr class="border-t border-gray-300 my-8">
+
+            <!-- Status filter section, hidden by default until data is loaded -->
+            <div class="container" id="statusFiltersContainer" style="display: none;">
+                <h4>Filter by Status (Hide):</h4>
+                <div id="dynamicStatusCheckboxes">
+                    <!-- Dynamic checkboxes for statuses will be inserted here by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Main content area, contains tabs and their respective content (table or summary) -->
+            <div id="main-content" style="display: none;">
+              <div class="tab-buttons" id="tabButtons"></div>
+              <div class="tab-content" id="tabContent"></div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer Section -->
+    <footer class="bg-gray-800 text-white p-4 mt-8">
+        <div class="container mx-auto text-center text-sm">
+            &copy; 2025 RCM Buddy. All rights reserved.
+        </div>
+    </footer>
+
+    <script>
+        // Common authentication and navigation setup (copied from dashboard.html)
+        async function verifyAndSetupUser() {
+            const token = localStorage.getItem('jwtToken');
+            if (!token) {
+                window.location.href = '/'; // Redirect to login if no token
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/protected', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    console.error('Token verification failed:', response.statusText, response.status);
+                    localStorage.removeItem('jwtToken');
+                    window.location.href = '/';
+                    return;
+                }
+
+                const userData = await response.json();
+                const profileLink = document.getElementById('profileLink');
+                if (profileLink) {
+                    profileLink.textContent = `Hello, ${userData.user.username}`;
+                    profileLink.href = '#'; // Placeholder for actual profile page link
+                }
+
+            } catch (error) {
+                console.error('Error verifying token or fetching user data:', error);
+                localStorage.removeItem('jwtToken');
+                window.location.href = '/';
+            }
+        }
+
+        // Logout functionality (copied from dashboard.html)
+        document.getElementById('logoutBtn').addEventListener('click', (e) => {
+            e.preventDefault();
+            localStorage.removeItem('jwtToken'); // Remove the JWT
+            window.location.href = '/'; // Redirect to login page
+        });
+
+        // The loadSavedData() function for the tracker is already called in the <body> onload attribute.
+        // We removed the original DOMContentLoaded listener from script.js, and now call verifyAndSetupUser directly.
+    </script>
+
+    <!-- Link to the external JavaScript file (RENAMED) -->
+    <script src="ticket-tracker.js"></script>
+
+</body>
+</html>

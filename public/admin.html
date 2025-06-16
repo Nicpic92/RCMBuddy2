@@ -1,0 +1,116 @@
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const token = localStorage.getItem('jwtToken');
+            const adminContent = document.getElementById('admin-content');
+            const loader = document.getElementById('loader-container');
+            const authError = document.getElementById('auth-error');
+
+            if (!token) {
+                window.location.href = '/index.html';
+                return;
+            }
+
+            try {
+                // 1. Validate token and get user role
+                const protectedRes = await fetch('/api/protected', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                // --- THIS IS THE NEW "BLACK BOX RECORDER" ---
+                // If the response the **root** of your repository on GitHub.
+*   Click the pencil icon to edit it.
+*   **Delete everything** and replace it with this:
+    ```toml
+    [build]
+      command = "# No build command needed"
+      publish = "public"
+      functions = "netlify/functions"
+    ```
+*   Commit the change with the message `chore: Finalize netlify.toml`.
+
+**3. Replace `protected.js` with a Diagnostic Version**
+*   Go to the `protected.js` file inside `netlify/functions/` on GitHub.
+*   Click the pencil icon to edit it.
+*   **Delete everything** and replace it with this special diagnostic version. This version will tell us *exactly* which `require` call is failing if it still fails.
+    ```javascript
+    exports.handler = async (event, context) => {
+        try {
+            console.log('[DEBUG] Protected function starting.');
+
+            console.log('[DEBUG] Attempting to require jsonwebtoken...');
+            const jwt = require('jsonwebtoken');
+            console.log('[DEBUG] Successfully required jsonwebtoken.');
+
+            console.log('[DEBUG] Attempting to require pg...');
+            const { Pool } = require('pg');
+            console.log('[DEBUG] Successfully required pg.');
+
+            console.log('[DEBUG] Checking for DATABASE_URL...');
+            if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL is not defined.');
+            console.log('[DEBUG] DATABASE_URL found.');
+
+            console.log('[DEBUG] Creating new database pool...');
+            const pool = new Pool({
+                connectionString: process.env.DATABASE_URL,
+                ssl: { rejectUnauthorized: false }
+            });
+            console.log('[DEBUG] Database pool created.');
+
+            // Your original logic starts here
+            const authHeader = event.headers.authorization;
+            if (!authHeader) throw new Error('Access denied. No token provided.');
+            const token = authHeader.split(' ')[1];
+            if (!token) throw new Error('Access denied. Token format is "Bearer [token]".');
+            
+            const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
+            const userId = decodedToken.id;
+
+            const client = await pool.connect();
+            try {
+                const { rows } = await client.query('SELECT id, username, email, role, company_id, (SELECT name FROM companies WHERE id = users.company_id) as company_name FROM users WHERE id = $1', [userId]);
+                if (rows.length === 0) throw new Error('User not found.');
+                
+                return {
+                    statusCode: 200,
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ message: 'Access granted.', user: rows[0] })
+                };
+            } finally {
+                client.release();
+            }
+        } catch (error) {
+            console.error('[CRITICAL ERROR in protected.js]:', error);
+            return {
+                statusCode: 500,
+                body: JSON.stringify({ message: 'Internal Server Error', error: error.message })
+            };
+        }
+    };
+    ```
+*   Commit the change with the message `debug: Add verbose logging to protected.js`.
+
+---
+
+#### Part 2: Reset The Live Environment on Netlify
+
+1.  Go to your site's dashboard on the **Netlify website**.
+2.  Go to **Site settings > Environment variables**.
+3.  **Delete** both `JWT_SECRET` and `DATABASE_URL`.
+4.  **Re-add them** from scratch. This clears any potential caching issues in Netlify's backend. Make sure they are set for "All scopes".
+
+---
+
+#### Part 3: The Final Deploy
+
+1.  Go to the **Deploys** tab for your site on Netlify.
+2.  Click the **"Trigger deploy"** dropdown button.
+3.  Choose the option **"Clear cache and deploy site"**. This is the most important step. It forces a completely fresh build.
+
+### The Final Test
+
+Let the deploy finish. Clear your browser cache one last time (`Ctrl+Shift+R`). Then test the admin console.
+
+*   **If it works:** Congratulations. The "scorched earth" reset cleared the bad state.
+*   **If it still logs you out:** This is okay. We now have our definitive answer. Go to the **Netlify Function Log** for `protected.js` (like we tried before). This time, it **will** contain a specific error message from our new diagnostic code, telling us exactly what failed.
+
+**ACTION REQUIRED:** Please perform this entire three-part plan. If it fails, send me a screenshot of the **Netlify Function Log for `protected.js`**. It will contain the final answer.

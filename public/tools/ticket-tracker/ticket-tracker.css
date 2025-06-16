@@ -1,0 +1,427 @@
+/*
+ * CSS for the Universal Ticket Tracker
+ * Defines the visual styling for the entire application.
+ */
+
+/* --- Management Color Scheme Variables --- */
+/* These variables allow for easy theme customization. */
+:root {
+    --primary-bg: #f8f9fa; /* Light grey background for the body */
+    --container-bg: #ffffff; /* White background for main content containers */
+    --text-color: #212529; /* Dark grey for general text */
+    --header-text-color: #343a40; /* Slightly darker grey for headings */
+    --accent-color: #0056b3; /* Primary blue accent color */
+    --accent-light-bg: #e7f0f7; /* Light blue background for status messages */
+    --border-color: #ced4da; /* Light grey for borders */
+    --table-header-bg: #e9ecef; /* Very light grey for table headers */
+    --button-secondary-bg: #28a745; /* Green for secondary buttons (e.g., print) */
+    --button-secondary-hover-bg: #218838; /* Darker green on hover */
+    --needs-attention-bg: #fff3cd; /* Light yellow for 'needs attention' backgrounds */
+    --needs-attention-text: #856404; /* Dark yellow/brown for 'needs attention' text */
+    --needs-attention-border: #ffeeba; /* Lighter yellow for 'needs attention' borders */
+}
+
+/* Basic body styling */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+    padding: 20px;
+    background-color: var(--primary-bg);
+    color: var(--text-color);
+}
+
+/* Main title styling */
+h1 {
+    color: var(--header-text-color);
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+/* General container styling for input sections, filters, etc. */
+.container {
+    margin-bottom: 20px;
+    background-color: var(--container-bg);
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.08); /* Subtle shadow for depth */
+}
+
+/* Styling for the status message div */
+#status {
+    background-color: var(--accent-light-bg);
+    color: var(--accent-color);
+    padding: 12px 18px;
+    border-left: 5px solid var(--accent-color); /* Left border as a highlight */
+    margin-bottom: 20px;
+    border-radius: 4px;
+    font-size: 0.95em;
+}
+
+/* Styling for filter containers (status filters, print options, sheet selection, ID selection) */
+#statusFiltersContainer, #printFiltersContainer, #sheetSelectionContainer, #mainIdSelectionContainer {
+    margin-bottom: 15px;
+    padding: 15px;
+    background-color: #fdfdff; /* Off-white background */
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+}
+#statusFiltersContainer h4, #printFiltersContainer h4, #sheetSelectionContainer h4, #mainIdSelectionContainer h4 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 1.05em;
+    color: var(--header-text-color);
+}
+#statusFiltersContainer label, #printFiltersContainer label, #sheetSelectionContainer label, #mainIdSelectionContainer label {
+    margin-right: 15px;
+    font-size: 0.9em;
+    cursor: pointer;
+    color: var(--text-color);
+}
+#statusFiltersContainer input[type="checkbox"], #printFiltersContainer input[type="checkbox"] {
+    margin-right: 5px;
+    vertical-align: middle; /* Align checkbox with text */
+}
+#printPlanFilterInput, #printAssignedToFilterInput, #printPriorityFilterInput, #printSortByInput, #mainSheetSelect, #mainIdSelect {
+    padding: 8px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 0.9em;
+    width: calc(100% - 250px); /* Responsive width calculation */
+    max-width: 280px;
+    margin-right: 10px;
+}
+.print-options-line, .report-options-line { /* Combined for consistency */
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+.print-options-line:last-child, .report-options-line:last-child {
+    margin-bottom: 0;
+}
+
+/* Tab button styling */
+.tab-buttons {
+    border-bottom: 2px solid var(--border-color);
+    padding-bottom: 0;
+    margin-bottom: 0;
+    display: flex;
+    flex-wrap: wrap; /* Allow tabs to wrap on smaller screens */
+}
+.tab-buttons button {
+    background-color: var(--table-header-bg);
+    color: var(--header-text-color);
+    border: 1px solid var(--border-color);
+    border-bottom: none; /* No bottom border to blend with tab content */
+    padding: 12px 18px;
+    cursor: pointer;
+    margin-right: 3px;
+    margin-bottom: -2px; /* Pulls button slightly over the border */
+    border-radius: 6px 6px 0 0; /* Rounded top corners */
+    font-weight: 500;
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+.tab-buttons button:hover {
+    background-color: #d1d5db; /* Lighter grey on hover */
+    color: var(--accent-color);
+}
+.tab-buttons button.active {
+    background-color: var(--container-bg);
+    color: var(--accent-color);
+    border-color: var(--border-color) var(--border-color) var(--container-bg); /* Bottom border color matches container to create illusion */
+    border-bottom: 2px solid var(--accent-color); /* Active tab has an accent colored bottom border */
+    position: relative; /* For z-index to overlap border */
+    z-index: 1;
+    font-weight: 600;
+}
+
+/* Tab pane content styling */
+.tab-pane {
+    display: none; /* Hidden by default */
+    padding: 20px;
+    background-color: var(--container-bg);
+    border: 1px solid var(--border-color);
+    border-top: none; /* No top border to blend with active tab button */
+    border-radius: 0 0 8px 8px; /* Rounded bottom corners */
+}
+.tab-pane.active {
+    display: block; /* Shown when active */
+}
+
+/* Table styling */
+table {
+    width: 100%;
+    border-collapse: collapse; /* Collapse borders for a clean look */
+    margin-top: 15px;
+    table-layout: fixed; /* Ensures columns are fixed width */
+}
+th, td {
+    border: 1px solid #dee2e6;
+    padding: 12px 15px;
+    text-align: left;
+    word-break: break-word; /* Prevent long words from breaking layout */
+}
+th {
+    background-color: var(--table-header-bg);
+    color: var(--header-text-color);
+    font-weight: 600;
+    position: relative;
+}
+th span.header-text {
+    display: block;
+    cursor: pointer; /* Indicates sortable */
+    user-select: none;
+    padding: 5px 0;
+}
+th span.sort-arrow {
+    font-size: 0.8em;
+    margin-left: 5px;
+    color: #6c757d;
+}
+th input.column-filter {
+    width: calc(100% - 12px); /* Responsive width for filter inputs */
+    padding: 8px;
+    margin-top: 5px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    box-sizing: border-box; /* Include padding/border in width */
+    font-size: 0.9em;
+}
+td {
+    background-color: var(--container-bg);
+}
+
+/* File input styling */
+input[type="file"] {
+    border: 1px solid var(--border-color);
+    padding: 8px 10px;
+    border-radius: 4px;
+    margin-right: 10px;
+    margin-bottom: 10px;
+    display: block; /* Ensures it takes its own line */
+}
+
+/* Button styling */
+.container button, #printPriorityButton {
+    background-color: var(--accent-color);
+    color: white;
+    border: none;
+    padding: 10px 18px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 0.95em;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    margin-left: 5px;
+    margin-bottom: 10px;
+}
+.container button:first-of-type {
+    margin-left: 0;
+}
+.container button:hover, #printPriorityButton:hover {
+    background-color: #004085; /* Darker blue on hover */
+}
+.container button:active, #printPriorityButton:active {
+    background-color: #003366; /* Even darker blue on click */
+}
+#printPriorityButton {
+    background-color: var(--button-secondary-bg); /* Green for print button */
+}
+#printPriorityButton:hover {
+    background-color: var(--button-secondary-hover-bg); /* Darker green on hover */
+}
+
+/* Summary view filter container */
+.summary-filters-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); /* Responsive grid columns */
+    gap: 12px;
+    margin-bottom: 20px;
+}
+.summary-filters-container input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-size: 0.9em;
+}
+
+/* Styling for grouped items in summary view (e.g., items under an SR #) */
+.summary-group-header {
+    font-size: 1.15em;
+    color: var(--accent-color);
+    margin-top: 0;
+    margin-bottom: 12px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 5px;
+}
+.summary-item-subitem {
+    margin-bottom: 15px; /* Space between individual items in a group */
+    padding-bottom: 10px;
+    border-bottom: 1px dotted #eee; /* Dotted line separator */
+}
+.summary-item-subitem:last-child {
+    border-bottom: none; /* No border after the last subitem */
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+.summary-item-subitem p {
+    margin: 6px 0;
+    font-size: 0.95em;
+    line-height: 1.65;
+}
+.summary-item-subitem p strong {
+    color: var(--header-text-color);
+    font-weight: 500;
+}
+.summary-item-subitem ul {
+    padding-left: 20px;
+    margin: 6px 0;
+    font-size: 0.95em;
+    line-height: 1.65;
+}
+.summary-item-subitem li {
+    margin-bottom: 4px;
+}
+.summary-item { /* This now acts as a container for grouped items */
+    background-color: #fdfdfd;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    padding: 18px;
+    margin-bottom: 18px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+.summary-item h3 { /* This will be the SR # header */
+    margin-top: 0;
+    margin-bottom: 12px;
+    font-size: 1.15em;
+    color: var(--accent-color);
+}
+/* General styling for paragraphs and lists within summary items */
+.summary-item p {
+    margin: 6px 0;
+    font-size: 0.95em;
+    line-height: 1.65;
+}
+.summary-item p strong {
+    color: var(--header-text-color);
+    font-weight: 500;
+}
+.summary-item ul {
+    padding-left: 20px;
+    margin: 6px 0;
+    font-size: 0.95em;
+    line-height: 1.65;
+}
+.summary-item li {
+    margin-bottom: 4px;
+}
+
+/* Highlight for items needing attention (e.g., missing ETA/Status) */
+.needs-attention {
+    background-color: var(--needs-attention-bg);
+    color: var(--needs-attention-text);
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-weight: bold;
+    border: 1px solid var(--needs-attention-border);
+}
+
+/* --- Print Specific Styles --- */
+/* These styles apply only when the page is printed */
+@media print {
+    /* Hide everything by default */
+    body * {
+        visibility: hidden;
+    }
+    /* Make only the print-area visible */
+    #print-area, #print-area * {
+        visibility: visible;
+    }
+    #print-area {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+    }
+    .print-section {
+        margin-bottom: 20px;
+        padding: 10px;
+        border: 1px solid #ccc;
+    }
+    .print-section h2 {
+        font-size: 1.5em;
+        border-bottom: 1px solid #000;
+        padding-bottom: 5px;
+        margin-bottom: 10px;
+    }
+    .print-section h3.plan-subheader {
+        font-size: 1.2em;
+        margin-top: 15px;
+        margin-bottom: 8px;
+        color: #333;
+    }
+    .print-item { /* This is now the outer container for a group of items */
+        margin-bottom: 15px;
+        padding: 10px; /* Add some padding to the whole item block */
+        border: 1px solid #ddd; /* A subtle border for the whole group */
+        page-break-inside: avoid; /* Avoid breaking a group across pages if possible */
+    }
+    .print-item-group-header { /* For the SR # inside print item */
+        font-size: 1.1em;
+        margin-top: 0;
+        margin-bottom: 8px;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 3px;
+    }
+    .print-item-subitem { /* For individual records within the group */
+        margin-bottom: 10px;
+        padding-bottom: 8px;
+        border-bottom: 1px dotted #eee;
+    }
+    .print-item-subitem:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+        padding-bottom: 0;
+    }
+    .print-item-subitem h4 {
+        font-size: 1em;
+        margin-top: 0;
+        margin-bottom: 5px;
+    }
+    .print-item-subitem p {
+        margin: 3px 0;
+        font-size: 0.9em;
+    }
+    .print-item-subitem ul {
+        padding-left: 20px;
+        margin: 3px 0;
+        font-size: 0.9em;
+    }
+    .page-break {
+        page-break-after: always;
+    }
+    /* Force background colors to print */
+    * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+    /* Prevent elements from breaking across pages */
+    .print-section, .print-item {
+        page-break-inside: avoid;
+    }
+    /* Ensure bold text is printed bold */
+    b, strong {
+        font-weight: bold !important;
+    }
+}
+/* NEW: Ensure navigation links in the header are visible */
+header nav ul li a {
+    color: rgb(8, 8, 8) !important; /* Force text to be white */
+}
+header nav ul li a:hover {
+    /* Use a lighter blue for hover state, adjust as needed */
+    color: #bfdbfe !important; /* Tailwind's blue-200 equivalent */
+}
+

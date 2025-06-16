@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CA Reports Tracker Summary</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        /* --- MirraBuddy Nav Bar Styles --- */
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
+        .top-nav {
+            background-color: #2D62B3;
+            padding: 10px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            font-family: 'Poppins', sans-serif; /* Use Poppins for the nav bar */
+        }
+        .tool-list { list-style: none; margin: 0; padding: 0; display: flex; gap: 20px; }
+        .tool-link { color: white; text-decoration: none; font-weight: 500; font-size: 1rem; padding: 8px 15px; border-radius: 6px; transition: background-color 0.3s ease; }
+        .tool-link:hover { background-color: #2756A5; }
+        .tool-link.active { background-color: #2756A5; font-weight: 600; }
+        .logout-button { padding: 8px 18px; border: none; background-color: #6c757d; color: white; font-size: 1rem; font-weight: 500; border-radius: 6px; cursor: pointer; transition: background-color 0.3s ease; font-family: 'Poppins', sans-serif; }
+        .logout-button:hover { background-color: #5a6268; }
+
+        /* --- User's Original Styles (Unchanged) --- */
+        :root {
+            --primary-bg: #f8f9fa;
+            --container-bg: #ffffff;
+            --text-color: #212529;
+            --header-text-color: #343a40;
+            --accent-color: #0056b3;
+            --accent-light-bg: #e7f0f7;
+            --border-color: #ced4da;
+            --table-header-bg: #e9ecef;
+            --button-secondary-bg: #28a745;
+            --button-secondary-hover-bg: #218838;
+            --needs-attention-bg: #fff3cd;
+            --needs-attention-text: #856404;
+            --needs-attention-border: #ffeeba;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+            padding: 20px;
+            background-color: var(--primary-bg);
+            color: var(--text-color);
+        }
+        h1 {
+            color: var(--header-text-color);
+            text-align: center;
+            margin-bottom: 25px;
+        }
+        .container {
+            margin-bottom: 20px;
+            background-color: var(--container-bg);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+        }
+        #status, #oldFileStatusMessage {
+            background-color: var(--accent-light-bg);
+            color: var(--accent-color);
+            padding: 12px 18px;
+            border-left: 5px solid var(--accent-color);
+            margin-bottom: 20px;
+            border-radius: 4px;
+            font-size: 0.95em;
+        }
+        #oldFileStatusMessage {
+            margin-top: 10px;
+            display: block;
+            clear: both;
+        }
+
+
+        #statusFiltersContainer, #printFiltersContainer {
+            margin-bottom: 15px;
+            padding: 15px;
+            background-color: #fdfdff;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+        }
+        #statusFiltersContainer h4, #printFiltersContainer h4 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            font-size: 1.05em;
+            color: var(--header-text-color);
+        }
+        #statusFiltersContainer label, #printFiltersContainer label {
+            margin-right: 15px;
+            font-size: 0.9em;
+            cursor: pointer;
+            color: var(--text-color);
+        }
+        #statusFiltersContainer input[type="checkbox"], #printFiltersContainer input[type="checkbox"] {
+            margin-right: 5px;
+            vertical-align: middle;
+        }
+        #printPlanFilterInput {
+            padding: 8px 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 0.9em;
+            width: calc(100% - 250px);
+            max-width: 280px;
+            margin-right: 10px;
+        }
+           #printFiltersContainer .print-options-line {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        #printFiltersContainer .print-options-line:last-child {
+            margin-bottom: 0;
+        }
+
+
+        .tab-buttons {
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 0;
+            margin-bottom: 0;
+            display: flex;
+            flex-wrap: wrap;
+        }
+        .tab-buttons button {
+            background-color: var(--table-header-bg);
+            color: var(--header-text-color);
+            border: 1px solid var(--border-color);
+            border-bottom: none;
+            padding: 12px 18px;
+            cursor: pointer;
+            margin-right: 3px;
+            margin-bottom: -2px;
+            border-radius: 6px 6px 0 0;
+            font-weight: 500;
+            transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+        }
+        .tab-buttons button:hover {
+            background-color: #d1d5db;
+            color: var(--accent-color);
+        }
+        .tab-buttons button.active {
+            background-color: var(--container-bg);
+            color: var(--accent-color);
+            border-color: var(--border-color) var(--border-color) var(--container-bg);
+            border-bottom: 2px solid var(--accent-color);
+            position: relative;
+            z-index: 1;
+            font-weight: 600;
+        }
+        .tab-pane {
+            display: none;
+            padding: 20px;
+            background-color: var(--container-bg);
+            border: 1px solid var(--border-color);
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+        }
+        .tab-pane.active {
+            display: block;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            table-layout: fixed;
+        }
+        th, td {
+            border: 1px solid #dee2e6;
+            padding: 12px 15px;
+            text-align: left;
+            word-break: break-word;
+        }
+        th {
+            background-color: var(--table-header-bg);
+            color: var(--header-text-color);
+            font-weight: 600;
+            position: relative;
+        }
+        th span.header-text {
+            display: block;
+            cursor: pointer;
+            user-select: none;
+            padding: 5px 0;
+        }
+        th span.sort-arrow {
+            font-size: 0.8em;
+            margin-left: 5px;
+            color: #6c757d;
+        }
+        th input.column-filter {
+            width: calc(100% - 12px);
+            padding: 8px;
+            margin-top: 5px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 0.9em;
+        }
+        td {
+            background-color: var(--container-bg);
+        }
+        input[type="file"] {
+            border: 1px solid var(--border-color);
+            padding: 8px 10px;
+            border-radius: 4px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            display: block;
+        }
+        .container button, #printPriorityButton {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 10px 18px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 0.95em;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            margin-left: 5px;
+            margin-bottom: 10px;
+        }
+        .container button:first-of-type {
+             margin-left: 0;
+        }
+
+        .container button:hover, #printPriorityButton:hover {
+            background-color: #004085;
+        }
+        .container button:active, #printPriorityButton:active {
+            background-color: #003366;
+        }
+           #printPriorityButton {
+            background-color: var(--button-secondary-bg);
+        }
+        #printPriorityButton:hover {
+             background-color: var(--button-secondary-hover-bg);
+        }
+
+        .summary-filters-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .summary-filters-container input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 0.9em;
+        }
+        .summary-item {
+            background-color: #fdfdfd;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 18px;
+            margin-bottom: 18px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        }
+        .summary-item h3 {
+            margin-top: 0;
+            margin-bottom: 12px;
+            font-size: 1.15em;
+            color: var(--accent-color);
+        }
+        .summary-item p {
+            margin: 6px 0;
+            font-size: 0.95em;
+            line-height: 1.65;
+        }
+        .summary-item p strong {
+            color: var(--header-text-color);
+            font-weight: 500;
+        }
+        .summary-item ul {
+            padding-left: 20px;
+            margin: 6px 0;
+            font-size: 0.95em;
+            line-height: 1.65;
+        }
+        .summary-item li {
+            margin-bottom: 4px;
+        }
+        .needs-attention {
+            background-color: var(--needs-attention-bg);
+            color: var(--needs-attention-text);
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-weight: bold;
+            border: 1px solid var(--needs-attention-border);
+        }
+
+
+        @media print {
+            body * { visibility: hidden; }
+            #print-area, #print-area * { visibility: visible; }
+            #print-area { position: absolute; left: 0; top: 0; width: 100%; }
+            .print-section { margin-bottom: 20px; padding: 10px; border: 1px solid #ccc; }
+            .print-section h2 { font-size: 1.5em; border-bottom: 1px solid #000; padding-bottom: 5px; margin-bottom: 10px; }
+            .print-section h3.plan-subheader { font-size: 1.2em; margin-top: 15px; margin-bottom: 8px; color: #333; }
+            .print-item { margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px dotted #eee; }
+            .print-item:last-child { border-bottom: none; }
+            .print-item h4 { font-size: 1.1em; margin-top: 0; margin-bottom: 5px; }
+            .print-item p { margin: 3px 0; font-size: 0.9em; }
+            .print-item ul { padding-left: 20px; margin: 3px 0; font-size: 0.9em; }
+            .page-break { page-break-after: always; }
+            .needs-attention {
+                background-color: #ffeeaa !important;
+                color: #000000 !important;
+                -webkit-print-color-adjust: exact;
+                color-adjust: exact;
+            }
+            b, strong {
+                font-weight: bold !important;
+                -webkit-print-color-adjust: exact;
+                color-adjust: exact;
+            }
+        }
+    </style>
+</head>
+<body onload="loadSavedData()">
+
+    <nav class="top-nav">
+        <ul class="tool-list">
+            <li><a href="home.html" class="tool-link">Home</a></li>
+            <li><a href="ZelisReport.html" class="tool-link">Zelis Report</a></li>
+            <li><a href="GLValidate.html" class="tool-link">GL Validation Tool</a></li>
+            <li><a href="checkregister2.html" class="tool-link">Check Register</a></li>
+            <li><a href="Excel Validate.html" class="tool-link">Excel Validate</a></li>
+            <li><a href="Report Tracker Dashboard.html" class="tool-link active">Report Tracker Dashboard</a></li>
+        </ul>
+        <button id="logout" class="logout-button">Logout</button>
+    </nav>
+
+    <h1>CA Reports Tracker Summary</h1>
+    <div id="status">Checking for saved data...</div>
+    <div id="oldFileStatusMessage" style="display: none;"></div> <div class="container">
+        <h3>Load New Excel File (Current Report)</h3>
+        <p>This will overwrite any current report data saved in your browser.</p>
+        <input type="file" id="fileInput" accept=".xlsx, .xls">
+        <button onclick="clearSavedData()">Clear Current Report Data</button>
+    </div>
+
+    <div class="container">
+        <h3>Load Old Excel File (for Comparison)</h3>
+        <p>Select a previous report file to compare against the current report. Changes will be shown in bold.</p>
+        <input type="file" id="oldFileInput" accept=".xlsx, .xls">
+        <button onclick="clearOldReportData()">Clear Old Report (Stop Comparing)</button>
+    </div>
+
+    <div class="container" id="printFiltersContainer" style="display: none;">
+        <h4>Print Priority View Options:</h4>
+        <div class="print-options-line">
+            <label for="printPlanFilterInput">Filter by Plan:</label>
+            <input type="text" id="printPlanFilterInput" placeholder="Enter Plan name (optional)...">
+        </div>
+        <div class="print-options-line">
+            <label><input type="checkbox" id="printGroupByPlanCheckbox"> Print by Plan First</label>
+        </div>
+        <button id="printPriorityButton" onclick="handlePrintView()">Print Priority View</button>
+    </div>
+
+    <hr style="border: none; border-top: 1px solid #dee2e6; margin: 20px 0;">
+
+    <div class="container" id="statusFiltersContainer" style="display: none;"> <h4>Filter by Status (Hide):</h4>
+        <label><input type="checkbox" id="hideClosedStatus" onchange="applyAllFilters()"> Hide Closed/Close</label>
+        <label><input type="checkbox" id="hideMonitorStatus" onchange="applyAllFilters()"> Hide Monitor</label>
+        <label><input type="checkbox" id="hidePendingClientValidationStatus" onchange="applyAllFilters()"> Hide Pending Client Validation</label>
+        <label><input type="checkbox" id="hidePendingInternalValidationStatus" onchange="applyAllFilters()"> Hide Pending Internal Validation</label>
+    </div>
+
+    <div id="main-content" style="display: none;">
+      <div class="tab-buttons" id="tabButtons"></div>
+      <div class="tab-content" id="tabContent"></div>
+    </div>
+
+    <script>
+        // Security check and logout functionality
+        if (sessionStorage.getItem('isLoggedIn') !== 'true') {
+            window.location.href = 'index.html';
+        }
+        const logoutButton = document.getElementById('logout');
+        if (logoutButton) {
+            logoutButton.addEventListener('click', function() {
+                sessionStorage.removeItem('isLoggedIn');
+                window.location.href = 'index.html';
+            });
+        }
+
+        // --- ALL ORIGINAL FUNCTIONALITY BELOW ---
+
+        let workbookData = {};
+        const storageKey = 'trackerWorkbookData';
+        let sortDirections = {};
+        let currentActiveTabName = '';
+        let oldWorkbookData = null; 
+        let oldFileLoaded = false;
+        const oldReportKeyField = 'Description';
+
+        // ... (The rest of your original, unchanged JavaScript goes here) ...
+        function loadSavedData() {
+            const savedData = localStorage.getItem(storageKey);
+            const statusDiv = document.getElementById('status');
+            if (savedData) {
+                workbookData = JSON.parse(savedData);
+                statusDiv.innerHTML = `Displaying current report data from your last session. To update, load a new file.`;
+                document.getElementById('statusFiltersContainer').style.display = 'block';
+                document.getElementById('printFiltersContainer').style.display = 'block';
+                displayUI();
+            } else {
+                statusDiv.textContent = 'No current report data saved. Please load an Excel file to get started.';
+                document.getElementById('statusFiltersContainer').style.display = 'none';
+                document.getElementById('printFiltersContainer').style.display = 'none';
+            }
+            updateOldFileStatusMessage();
+        }
+
+        function clearSavedData() {
+            if (confirm("Are you sure you want to clear all current report data?")) {
+                localStorage.removeItem(storageKey);
+                workbookData = {};
+                sortDirections = {};
+                document.getElementById('status').textContent = 'Current report data has been cleared. Please load a file.';
+                document.getElementById('main-content').style.display = 'none';
+                document.getElementById('statusFiltersContainer').style.display = 'none';
+                document.getElementById('printFiltersContainer').style.display = 'none';
+                document.getElementById('tabButtons').innerHTML = '';
+                document.getElementById('tabContent').innerHTML = '';
+                if (currentActiveTabName) showTab(currentActiveTabName);
+            }
+        }
+
+        document.getElementById('fileInput').addEventListener('change', handleFile, false);
+        document.getElementById('oldFileInput').addEventListener('change', handleOldFile, false);
+
+        function handleFile(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            document.getElementById('status').textContent = `Loading new report: ${file.name}...`;
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const data = new Uint8Array(event.target.result);
+                const workbook = XLSX.read(data, {type: 'array'});
+                processWorkbook(workbook);
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function handleOldFile(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            document.getElementById('oldFileStatusMessage').textContent = `Loading old report: ${file.name}...`;
+            document.getElementById('oldFileStatusMessage').style.display = 'block';
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const data = new Uint8Array(event.target.result);
+                const workbook = XLSX.read(data, {type: 'array'});
+                processOldWorkbook(workbook, file.name);
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function processOldWorkbook(workbook, fileName) {
+            oldWorkbookData = null;
+            oldFileLoaded = false;
+            const desiredSheetNameLower = 'claims reports';
+            const actualSheetName = workbook.SheetNames.find(name => name.trim().toLowerCase() === desiredSheetNameLower);
+            if (actualSheetName) {
+                const worksheet = workbook.Sheets[actualSheetName];
+                const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+                let headerRowIndex = -1;
+                for (let i = 0; i < jsonData.length; i++) {
+                    if (jsonData[i].some(cell => cell !== null && cell.toString().trim() !== '')) {
+                        headerRowIndex = i;
+                        break;
+                    }
+                }
+                if (headerRowIndex !== -1) {
+                    const headers = jsonData[headerRowIndex].map(h => h.toString().trim());
+                    const dataRows = jsonData.slice(headerRowIndex + 1);
+                    const rows = dataRows.map(row => {
+                        const rowData = {};
+                        headers.forEach((header, index) => { if (header) rowData[header] = row[index]; });
+                        return rowData;
+                    }).filter(row => Object.keys(row).length > 0 && Object.values(row).some(val => val !== null && val.toString().trim() !== ''));
+                    oldWorkbookData = { 'Claims Reports': rows };
+                    oldFileLoaded = true;
+                    updateOldFileStatusMessage(fileName);
+                } else {
+                    updateOldFileStatusMessage(null, 'No header row found in "Claims Reports" sheet of the old file.');
+                }
+            } else {
+                updateOldFileStatusMessage(null, 'Old report file does not contain a "Claims Reports" sheet.');
+                alert('The selected old report file must contain a sheet named "Claims Reports" (case-insensitive) for comparison.');
+            }
+            if (currentActiveTabName) {
+                showTab(currentActiveTabName);
+            } else {
+                applyAllFilters();
+            }
+        }
+
+        function clearOldReportData() {
+            oldWorkbookData = null;
+            oldFileLoaded = false;
+            document.getElementById('oldFileInput').value = '';
+            updateOldFileStatusMessage();
+            if (currentActiveTabName) { showTab(currentActiveTabName); }
+        }
+
+        function updateOldFileStatusMessage(fileName, error) {
+            const msgDiv = document.getElementById('oldFileStatusMessage');
+            if (error) {
+                msgDiv.textContent = `Old Report Error: ${error}`;
+                msgDiv.style.display = 'block';
+            } else if (oldFileLoaded && fileName) {
+                msgDiv.textContent = `Comparing with old report: ${fileName}. Changes highlighted in bold.`;
+                msgDiv.style.display = 'block';
+            } else {
+                msgDiv.textContent = 'No old report loaded for comparison.';
+                msgDiv.style.display = 'none';
+            }
+        }
+
+        function processWorkbook(workbook) {
+            workbookData = {};
+            sortDirections = {};
+            const desiredSheetsMap = { 'claims reports': 'Claims Reports', 'archived': 'Archived' };
+            workbook.SheetNames.forEach(actualSheetName => {
+                const normalizedSheetName = actualSheetName.trim().toLowerCase();
+                if (desiredSheetsMap[normalizedSheetName]) {
+                    const prettyName = desiredSheetsMap[normalizedSheetName];
+                    const worksheet = workbook.Sheets[actualSheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+                    let headerRowIndex = -1;
+                    for (let i = 0; i < jsonData.length; i++) {
+                        if (jsonData[i].some(cell => cell !== null && cell.toString().trim() !== '')) {
+                            headerRowIndex = i;
+                            break;
+                        }
+                    }
+                    if (headerRowIndex !== -1) {
+                        const headers = jsonData[headerRowIndex].map(h => h.toString().trim());
+                        const dataRows = jsonData.slice(headerRowIndex + 1);
+                        const rows = dataRows.map(row => {
+                            const rowData = {};
+                            headers.forEach((header, index) => { if (header) rowData[header] = row[index]; });
+                            return rowData;
+                        }).filter(row => Object.keys(row).length > 0 && Object.values(row).some(val => val !== null && val.toString().trim() !== ''));
+                        workbookData[prettyName] = rows;
+                    } else {
+                        workbookData[prettyName] = [];
+                    }
+                }
+            });
+            try {
+                localStorage.setItem(storageKey, JSON.stringify(workbookData));
+                document.getElementById('status').textContent = `Successfully processed new report.`;
+                document.getElementById('statusFiltersContainer').style.display = 'block';
+                document.getElementById('printFiltersContainer').style.display = 'block';
+            } catch (error) {
+                console.error("Error saving to localStorage:", error);
+                document.getElementById('status').textContent = "Could not save new report to browser storage. Data might be too large.";
+            }
+            displayUI(workbook.SheetNames);
+        }
+
+        function displayUI(allSheetNamesFromFile = []) {
+            const tabButtonsContainer = document.getElementById('tabButtons');
+            const tabContentContainer = document.getElementById('tabContent');
+            tabButtonsContainer.innerHTML = '';
+            tabContentContainer.innerHTML = '';
+            const processedSheetNames = Object.keys(workbookData);
+            let displayableTabs = [];
+            const hasClaimsReportsData = workbookData['Claims Reports'] && workbookData['Claims Reports'].length > 0;
+            if (hasClaimsReportsData) { displayableTabs.push('Summary View'); }
+            processedSheetNames.forEach(name => { if (name !== 'Summary View') { displayableTabs.push(name); } });
+            if (displayableTabs.includes('Summary View') && displayableTabs[0] !== 'Summary View') {
+                displayableTabs = ['Summary View', ...displayableTabs.filter(t => t !== 'Summary View')];
+            }
+            if(displayableTabs.length === 0 ) {
+                document.getElementById('main-content').style.display = 'none';
+                document.getElementById('statusFiltersContainer').style.display = 'none';
+                document.getElementById('printFiltersContainer').style.display = 'none';
+                let errorMessage = 'Could not find "Claims Reports" or "Archived" sheets with data. <br><b>Sheets found in file:</b> ' + (allSheetNamesFromFile.length > 0 ? allSheetNamesFromFile.join(', ') : 'None');
+                document.getElementById('status').innerHTML = errorMessage;
+                return;
+            }
+            document.getElementById('main-content').style.display = 'block';
+            document.getElementById('statusFiltersContainer').style.display = 'block';
+            document.getElementById('printFiltersContainer').style.display = hasClaimsReportsData ? 'block' : 'none';
+            document.getElementById('status').textContent = 'Current report data loaded. Select a tab to view.';
+            updateOldFileStatusMessage(document.getElementById('oldFileInput').files[0]?.name);
+            displayableTabs.forEach(tabName => {
+                const button = document.createElement('button');
+                button.textContent = tabName;
+                button.onclick = () => showTab(tabName);
+                tabButtonsContainer.appendChild(button);
+                const pane = document.createElement('div');
+                pane.id = `content-${tabName.replace(/\s+/g, '-')}`;
+                pane.className = 'tab-pane';
+                tabContentContainer.appendChild(pane);
+            });
+            const defaultTab = displayableTabs.includes('Summary View') ? 'Summary View' : (displayableTabs[0] || '');
+            if (currentActiveTabName && displayableTabs.includes(currentActiveTabName)) {
+                showTab(currentActiveTabName);
+            } else if (defaultTab) {
+                showTab(defaultTab);
+            }
+        }
+
+        function getComparableValue(value, fieldName) {
+            if (value === null || value === undefined) return "";
+            if (fieldName === 'Date Created' || (fieldName === 'ETA' && typeof value === 'number' && value > 20000)) {
+                if (typeof value === 'number' && value > 20000) {
+                    return new Date(Math.round((value - 25569) * 86400 * 1000)).toLocaleDateString();
+                }
+                return String(value).trim();
+            }
+            if ((fieldName === 'ETA' || fieldName === 'Status') && String(value).trim() === '') {
+                return fieldName === 'ETA' ? "NEEDS ETA!" : "NEEDS STATUS!";
+            }
+            if (fieldName === 'Remarks') {
+                return String(value).split(/\r\n|\r|\n/).map(r => r.trim()).filter(r => r !== '').join('\n');
+            }
+            return String(value).trim();
+        }
+
+        function formatForDisplay(value, fieldName) {
+            if (fieldName === 'Date Created' || (fieldName === 'ETA' && typeof value === 'number' && value > 20000)) {
+                if (typeof value === 'number' && value > 20000) {
+                    return new Date(Math.round((value - 25569) * 86400 * 1000)).toLocaleDateString();
+                }
+                return value ?? '';
+            }
+            if (fieldName === 'ETA' && (value === null || value === undefined || String(value).trim() === '')) {
+                return `<span class="needs-attention">NEEDS ETA!</span>`;
+            }
+            if (fieldName === 'Status' && (value === null || value === undefined || String(value).trim() === '')) {
+                return `<span class="needs-attention">NEEDS STATUS!</span>`;
+            }
+            if (fieldName === 'Remarks' && (value !== null && value !== undefined && String(value).trim() !== '')) {
+                const remarksArray = String(value).split(/\r\n|\r|\n/);
+                let remarksHtml = '<ul>';
+                remarksArray.forEach(remark => { if (remark.trim() !== '') remarksHtml += `<li>${remark.trim()}</li>`; });
+                return remarksHtml + '</ul>';
+            }
+            return value ?? '';
+        }
+        
+        function applyDiffHighlighting(currentDisplayValue, comparableCurrent, comparableOld) {
+            if (oldFileLoaded && oldWorkbookData?.['Claims Reports'] && comparableCurrent !== comparableOld) {
+                return `<b>${currentDisplayValue}</b>`;
+            }
+            return currentDisplayValue;
+        }
+
+        function generateTableHTML(sheetName) {
+            const sheetData = workbookData[sheetName];
+            if (!sheetData || sheetData.length === 0) return '<p>No data to display.</p>';
+            const headers = Object.keys(sheetData[0] || {});
+            if (headers.length === 0) return '<p>No headers found.</p>';
+            let tableHTML = '<table><thead><tr>';
+            headers.forEach(header => {
+                tableHTML += `<th data-header-name="${header}"><span class="header-text" onclick="sortTable('${sheetName}', '${header}')">${header} <span class="sort-arrow">&#x25B2;&#x25BC;</span></span></th>`;
+            });
+            tableHTML += '</tr><tr>';
+            headers.forEach(header => {
+                tableHTML += `<th><input type="text" class="column-filter" data-column-header="${header}" oninput="applyAllFilters()" placeholder="Filter ${header}..."></th>`;
+            });
+            tableHTML += '</tr></thead><tbody>';
+            sheetData.forEach(row => {
+                tableHTML += '<tr>';
+                headers.forEach(header => {
+                    let cellValue = formatForDisplay(row[header], header);
+                    tableHTML += `<td>${cellValue}</td>`;
+                });
+                tableHTML += '</tr>';
+            });
+            tableHTML += '</tbody></table>';
+            return tableHTML;
+        }
+
+        function generateSummaryFilterInputsHTML(sourceSheetName) {
+            if (!workbookData[sourceSheetName] || workbookData[sourceSheetName].length === 0) return '';
+            const filterableFields = ['Description', 'Source', 'Status', 'Date Created', 'Assigned To', 'Priority', 'Plan', 'Report', 'Remarks', 'Age', 'ETA'];
+            let filtersHTML = '<div class="summary-filters-container">';
+            filterableFields.forEach(fieldKey => {
+                if (workbookData[sourceSheetName][0]?.hasOwnProperty(fieldKey)) {
+                    filtersHTML += `<input type="text" class="summary-field-filter" data-filter-key="${fieldKey}" oninput="applyAllFilters()" placeholder="Filter ${fieldKey}..."/>`;
+                }
+            });
+            filtersHTML += '</div>';
+            return filtersHTML;
+        }
+
+        function generateSummaryViewHTML(sourceSheetName) {
+            const newSheetData = workbookData[sourceSheetName];
+            if (!newSheetData || newSheetData.length === 0) return '<p>No "Claims Reports" data to summarize.</p>';
+            const oldClaimsData = oldWorkbookData?.['Claims Reports'] || [];
+            let summaryItemsHTML = '<div class="summary-view-content">';
+            newSheetData.forEach(newRow => {
+                const oldRow = oldClaimsData.find(or => or[oldReportKeyField] === newRow[oldReportKeyField]);
+                summaryItemsHTML += '<div class="summary-item">';
+                function getFieldHtml(newVal, oldVal, fieldName, label, isHeader = false) {
+                    let comparableNew = getComparableValue(newVal, fieldName);
+                    let comparableOld = getComparableValue(oldVal, fieldName);
+                    let displayVal = formatForDisplay(newVal, fieldName);
+                    displayVal = applyDiffHighlighting(displayVal, comparableNew, comparableOld);
+                    if (isHeader) return newRow[fieldName] ? `<h3 data-field="${fieldName}">${displayVal}</h3>` : '';
+                    if (fieldName === "Remarks") return newRow[fieldName] ? `<p><strong data-field-label="${label}">${label}:</strong></p>${displayVal}` : '';
+                    return (newRow[fieldName] || (fieldName === 'ETA' || fieldName === 'Status')) ? `<p><strong data-field-label="${label}">${label}:</strong> <span data-field="${fieldName}">${displayVal}</span></p>` : '';
+                }
+                summaryItemsHTML += getFieldHtml(newRow['Description'], oldRow?.['Description'], 'Description', '', true);
+                ['Source', 'Status', 'Date Created', 'Assigned To', 'Priority', 'Plan', 'Report', 'Remarks', 'Age', 'ETA'].forEach(field => {
+                    summaryItemsHTML += getFieldHtml(newRow[field], oldRow?.[field], field, field);
+                });
+                summaryItemsHTML += '</div>';
+            });
+            summaryItemsHTML += '</div>';
+            return summaryItemsHTML;
+        }
+
+        function showTab(tabName) {
+            currentActiveTabName = tabName;
+            document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.tab-buttons button').forEach(b => b.classList.remove('active'));
+            const pane = document.getElementById(`content-${tabName.replace(/\s+/g, '-')}`);
+            if (pane) {
+                if (tabName === 'Summary View' && workbookData['Claims Reports']) {
+                    pane.innerHTML = generateSummaryFilterInputsHTML('Claims Reports') + generateSummaryViewHTML('Claims Reports');
+                } else if (workbookData[tabName]) {
+                    pane.innerHTML = generateTableHTML(tabName);
+                } else {
+                    pane.innerHTML = "<p>No data for this tab.</p>";
+                }
+                pane.classList.add('active');
+            }
+            document.querySelectorAll('.tab-buttons button').forEach(b => { if (b.textContent === tabName) b.classList.add('active'); });
+            applyAllFilters();
+        }
+
+        function applyAllFilters() {
+            if (!currentActiveTabName) return;
+            if (currentActiveTabName === 'Summary View') {
+                filterSummaryViewByFields();
+            } else if (workbookData[currentActiveTabName]) {
+                filterActiveTableByColumns();
+            }
+        }
+
+        function sortTable(sheetName, header) {
+            if (sheetName === 'Summary View') return;
+            const key = `${sheetName}-${header}`;
+            sortDirections[key] = !sortDirections[key];
+            workbookData[sheetName].sort((a,b) => {
+                const valA = a[header], valB = b[header];
+                if (valA == null || valA === '') return 1;
+                if (valB == null || valB === '') return -1;
+                const numA = parseFloat(valA), numB = parseFloat(valB);
+                if (!isNaN(numA) && !isNaN(numB)) return sortDirections[key] ? numA - numB : numB - numA;
+                return sortDirections[key] ? String(valA).localeCompare(String(valB)) : String(valB).localeCompare(String(valA));
+            });
+            showTab(sheetName);
+        }
+
+        function filterSummaryViewByFields() {
+            const activePane = document.querySelector('#content-Summary-View.active');
+            if (!activePane) return;
+            const filters = {};
+            activePane.querySelectorAll('.summary-field-filter').forEach(i => { if (i.value) filters[i.dataset.filterKey] = i.value.toUpperCase(); });
+            const statusFilters = {
+                closed: document.getElementById('hideClosedStatus').checked,
+                monitor: document.getElementById('hideMonitorStatus').checked,
+                pendingClient: document.getElementById('hidePendingClientValidationStatus').checked,
+                pendingInternal: document.getElementById('hidePendingInternalValidationStatus').checked
+            };
+            const items = activePane.querySelectorAll('.summary-item');
+            const data = workbookData['Claims Reports'] || [];
+            items.forEach((item, index) => {
+                let show = true;
+                const dataItem = data[index];
+                for(const key in filters) {
+                    let val = getComparableValue(dataItem[key], key);
+                    if(!val.toUpperCase().includes(filters[key])) { show = false; break; }
+                }
+                if(show) {
+                    const status = (dataItem['Status'] || '').toLowerCase();
+                    if((statusFilters.closed && (status === 'closed' || status === 'close')) || (statusFilters.monitor && status === 'monitor') || (statusFilters.pendingClient && status === 'pending client validation') || (statusFilters.pendingInternal && status === 'pending internal validation')) {
+                        show = false;
+                    }
+                }
+                item.style.display = show ? '' : 'none';
+            });
+        }
+
+        function filterActiveTableByColumns() {
+            const pane = document.querySelector('.tab-pane.active');
+            if (!pane || currentActiveTabName === 'Summary View') return;
+            const table = pane.querySelector('table');
+            if (!table) return;
+            const filters = {};
+            table.querySelectorAll('thead input.column-filter').forEach(i => { if (i.value) filters[i.dataset.columnHeader] = i.value.toUpperCase(); });
+            const statusFilters = {
+                closed: document.getElementById('hideClosedStatus').checked,
+                monitor: document.getElementById('hideMonitorStatus').checked,
+                pendingClient: document.getElementById('hidePendingClientValidationStatus').checked,
+                pendingInternal: document.getElementById('hidePendingInternalValidationStatus').checked
+            };
+            const data = workbookData[currentActiveTabName] || [];
+            table.querySelectorAll('tbody tr').forEach((row, index) => {
+                let show = true;
+                const dataItem = data[index];
+                for(const key in filters) {
+                    let val = getComparableValue(dataItem[key], key);
+                    if(!val.toUpperCase().includes(filters[key])) { show = false; break; }
+                }
+                if(show && dataItem.hasOwnProperty('Status')) {
+                     const status = (dataItem['Status'] || '').toLowerCase();
+                    if((statusFilters.closed && (status === 'closed' || status === 'close')) || (statusFilters.monitor && status === 'monitor') || (statusFilters.pendingClient && status === 'pending client validation') || (statusFilters.pendingInternal && status === 'pending internal validation')) {
+                        show = false;
+                    }
+                }
+                row.style.display = show ? '' : 'none';
+            });
+        }
+        
+        function generatePrintItemHtml(newItem, oldItem) {
+            let itemHtml = '<div class="print-item">';
+            function getPrintFieldHtml(currentVal, oldVal, fieldName, label, isHeader=false) {
+                let compNew = getComparableValue(currentVal, fieldName), compOld = getComparableValue(oldVal, fieldName);
+                let display = formatForDisplay(currentVal, fieldName);
+                display = applyDiffHighlighting(display, compNew, compOld);
+                if(isHeader) return newItem[fieldName] ? `<h4>${display}</h4>` : '';
+                if(fieldName === 'Remarks') return newItem[fieldName] ? `<p><strong>${label}:</strong></p>${display}` : '';
+                return (newItem[fieldName] || fieldName === 'ETA' || fieldName === 'Status') ? `<p><strong>${label}:</strong> ${display}</p>` : '';
+            }
+            itemHtml += getPrintFieldHtml(newItem['Description'], oldItem?.['Description'], 'Description', '', true);
+            ['Source', 'Status', 'Date Created', 'Assigned To', 'Priority', 'Plan', 'Report', 'Remarks', 'Age', 'ETA'].forEach(f => {
+                itemHtml += getPrintFieldHtml(newItem[f], oldItem?.[f], f, f);
+            });
+            itemHtml += '</div>';
+            return itemHtml;
+        }
+
+        function handlePrintView() {
+            const claimsData = workbookData['Claims Reports'];
+            if (!claimsData) { alert("No 'Claims Reports' data to print."); return; }
+            const oldPrintData = oldWorkbookData?.['Claims Reports'] || [];
+            const planFilter = document.getElementById('printPlanFilterInput').value.toLowerCase();
+            const groupByPlan = document.getElementById('printGroupByPlanCheckbox').checked;
+            
+            const excludedStatusesForPriority = ['pending client validation', 'pending internal validation', 'closed', 'close', 'archive', 'monitor', 'pending client response'];
+
+            const prioritySort = (a, b) => {
+                const priorityMap = { 'high': 1, 'medium': 2, 'low': 3 };
+                const priorityA = priorityMap[(a['Priority'] || '').trim().toLowerCase()] || 4;
+                const priorityB = priorityMap[(b['Priority'] || '').trim().toLowerCase()] || 4;
+                if (priorityA !== priorityB) return priorityA - priorityB;
+
+                const ageA = parseInt(a['Age'], 10) || 0;
+                const ageB = parseInt(b['Age'], 10) || 0;
+                if (ageA !== ageB) return ageB - ageA;
+
+                const dateA = typeof a['Date Created'] === 'number' ? a['Date Created'] : Infinity;
+                const dateB = typeof b['Date Created'] === 'number' ? b['Date Created'] : Infinity;
+                return dateA - dateB;
+            };
+
+            const dateSort = (a, b) => {
+                const dateA = typeof a['Date Created'] === 'number' ? a['Date Created'] : Infinity;
+                const dateB = typeof b['Date Created'] === 'number' ? b['Date Created'] : Infinity;
+                return dateA - dateB;
+            };
+
+            let filteredData = claimsData.filter(item => !planFilter || (item['Plan'] || '').toLowerCase().includes(planFilter));
+            if(planFilter && filteredData.length === 0) { alert(`No data found for Plan: "${document.getElementById('printPlanFilterInput').value}".`); return; }
+
+            const sections = {
+                priority: filteredData.filter(item => !excludedStatusesForPriority.includes((item['Status'] || '').toLowerCase())),
+                internal: filteredData.filter(item => (item['Status'] || '').toLowerCase() === 'pending internal validation'),
+                client: filteredData.filter(item => (item['Status'] || '').toLowerCase() === 'pending client validation')
+            };
+
+            let printHtml = '<div id="print-area">';
+            const buildSection = (title, items, sortFn) => {
+                let sectionHtml = `<div class="print-section"><h2>${title} ${planFilter && !groupByPlan ? `(Plan: ${document.getElementById('printPlanFilterInput').value})` : ''}</h2>`;
+                if(groupByPlan) {
+                    const plans = [...new Set(items.map(i => i['Plan'] || 'Unspecified'))].sort();
+                    let itemsPrinted = 0;
+                    plans.forEach(plan => {
+                        let planItems = items.filter(i => (i['Plan'] || 'Unspecified') === plan).sort(sortFn);
+                        if(planItems.length > 0) {
+                            itemsPrinted += planItems.length;
+                            sectionHtml += `<h3 class="plan-subheader">Plan: ${plan}</h3>`;
+                            planItems.forEach(item => sectionHtml += generatePrintItemHtml(item, oldPrintData.find(oi => oi[oldReportKeyField] === item[oldReportKeyField])));
+                        }
+                    });
+                    if(itemsPrinted === 0) sectionHtml += `<p>No items found for the selected criteria.</p>`;
+                } else {
+                    items.sort(sortFn);
+                    if(items.length > 0) {
+                        items.forEach(item => sectionHtml += generatePrintItemHtml(item, oldPrintData.find(oi => oi[oldReportKeyField] === item[oldReportKeyField])));
+                    } else {
+                        sectionHtml += `<p>No items found for the selected criteria.</p>`;
+                    }
+                }
+                return sectionHtml + '</div><div class="page-break"></div>';
+            };
+
+            printHtml += buildSection('Priority Tasks', sections.priority, prioritySort);
+            printHtml += buildSection('Pending Internal Validation', sections.internal, dateSort);
+            printHtml += buildSection('Pending Client Validation', sections.client, dateSort);
+            printHtml += '</div>';
+
+            const iframe = document.createElement('iframe');
+            iframe.style.cssText = 'height:0;width:0;position:absolute;visibility:hidden;';
+            document.body.appendChild(iframe);
+            const doc = iframe.contentDocument || iframe.contentWindow.document;
+            doc.open();
+            doc.write(`<html><head><title>Print</title><style>${Array.from(document.styleSheets).map(s=> {try{return Array.from(s.cssRules).map(r=>r.cssText).join('')}catch(e){return ''}}).join('')}</style></head><body>${printHtml}</body></html>`);
+            doc.close();
+            iframe.contentWindow.focus();
+            iframe.contentWindow.print();
+            setTimeout(() => document.body.removeChild(iframe), 1000);
+        }
+    </script>
+</body>
+</html>

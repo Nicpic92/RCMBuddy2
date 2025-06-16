@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - RCM Buddy</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            background-color: #f4f7f6;
+        }
+    </style>
+</head>
+<body class="font-sans">
+
+    <!-- Navigation Bar -->
+    <nav class="bg-white shadow-md sticky top-0 z-50">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <a href="/dashboard.html" class="text-2xl font-bold text-gray-800">RCM Buddy</a>
+            <ul id="nav-list" class="flex items-center space-x-4">
+                <li><a href="/dashboard.html" class="text-gray-600 hover:text-blue-500 font-medium">Dashboard</a></li>
+                <li><a href="/tools.html" class="text-gray-600 hover:text-blue-500 font-medium">All Tools</a></li>
+                <!-- Admin Console link will be dynamically inserted here -->
+                <li><span id="nav-username" class="text-gray-700 font-semibold">Loading...</span></li>
+                <li><button id="logout-btn" class="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 transition-colors">Logout</button></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="container mx-auto p-8">
+        <div class="text-center mb-10">
+            <h1 id="dashboard-heading" class="text-4xl font-extrabold text-gray-800 mb-2">Welcome to the RCM Buddy Dashboard</h1>
+            <p id="company-display" class="text-xl text-gray-600">Loading company info...</p>
+        </div>
+
+        <!-- Quick Access Tools Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            
+            <!-- File Manager Card -->
+            <div class="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300" data-tool-identifier="file-manager" style="display: none;">
+                <div class="flex items-center mb-4">
+                    <i class="fas fa-folder-open text-3xl text-blue-500 mr-4"></i>
+                    <h3 class="text-xl font-semibold text-gray-800">File Manager</h3>
+                </div>
+                <p class="text-gray-600 mb-4">Upload, download, and manage your company's files securely.</p>
+                <a href="/file-manager.html" class="font-semibold text-blue-600 hover:underline">Go to File Manager →</a>
+            </div>
+
+            <!-- Data Dictionary Builder Card -->
+            <div class="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300" data-tool-identifier="data-dictionary-builder" style="display: none;">
+                <div class="flex items-center mb-4">
+                    <i class="fas fa-book text-3xl text-purple-500 mr-4"></i>
+                    <h3 class="text-xl font-semibold text-gray-800">Data Dictionary Builder</h3>
+                </div>
+                <p class="text-gray-600 mb-4">Create and manage custom validation rule sets for your files.</p>
+                <a href="/tools/data-dictionary-builder.html" class="font-semibold text-blue-600 hover:underline">Build Dictionaries →</a>
+            </div>
+
+            <!-- Validation Engine Card -->
+            <div class="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300" data-tool-identifier="validation-engine" style="display: none;">
+                <div class="flex items-center mb-4">
+                    <i class="fas fa-check-double text-3xl text-green-500 mr-4"></i>
+                    <h3 class="text-xl font-semibold text-gray-800">Validation Engine</h3>
+                </div>
+                <p class="text-gray-600 mb-4">Validate files against your custom-built data dictionaries.</p>
+                <a href="/tools/validation-engine.html" class="font-semibold text-blue-600 hover:underline">Validate Data →</a>
+            </div>
+
+            <!-- Data Cleaner Card -->
+            <div class="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300" data-tool-identifier="data-cleaner" style="display: none;">
+                <div class="flex items-center mb-4">
+                    <i class="fas fa-broom text-3xl text-yellow-500 mr-4"></i>
+                    <h3 class="text-xl font-semibold text-gray-800">Data Cleaner</h3>
+                </div>
+                <p class="text-gray-600 mb-4">Quickly clean data by trimming whitespace and removing duplicates.</p>
+                <a href="/tools/data-cleaner.html" class="font-semibold text-blue-600 hover:underline">Use Tool →</a>
+            </div>
+
+            <!-- Lag Report Dashboard Card -->
+            <div class="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300" data-tool-identifier="lag-report-dashboard" style="display: none;">
+                <div class="flex items-center mb-4">
+                    <i class="fas fa-chart-line text-3xl text-red-500 mr-4"></i>
+                    <h3 class="text-xl font-semibold text-gray-800">Lag Report Dashboard</h3>
+                </div>
+                <p class="text-gray-600 mb-4">Upload and visualize your Lag Detail Report in an interactive dashboard.</p>
+                <a href="/tools/lag-report-validation.html" class="font-semibold text-blue-600 hover:underline">View Dashboard →</a>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const token = localStorage.getItem('jwtToken');
+            if (!token) {
+                // If no token, redirect to login page immediately
+                window.location.href = '/index.html';
+                return;
+            }
+
+            try {
+                // Fetch user data and permissions from the protected endpoint
+                const response = await fetch('/api/protected', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                // Handle authentication errors (e.g., expired token)
+                if (!response.ok) {
+                    // Clear the invalid token and redirect to login
+                    localStorage.removeItem('jwtToken');
+                    window.location.href = '/index.html';
+                    return;
+                }
+
+                const data = await response.json();
+                const user = data.user;
+                const accessible_tools = data.accessible_tools;
+
+                // --- 1. Update UI with user information ---
+                document.getElementById('nav-username').textContent = `Hello, ${user.username}`;
+                document.getElementById('dashboard-heading').textContent = `Welcome, ${user.username}`;
+                document.getElementById('company-display').textContent = `Company: ${user.company_name}`;
+
+                // --- 2. Dynamically add the "Admin Console" link if the user is an admin ---
+                if (user.role === 'admin') {
+                    const navList = document.getElementById('nav-list');
+                    const adminLinkLi = document.createElement('li');
+                    adminLinkLi.innerHTML = `<a href="/admin.html" class="text-blue-600 font-bold hover:underline">Admin Console</a>`;
+                    
+                    // Insert the admin link before the username for a nice layout
+                    const usernameElement = document.getElementById('nav-username').parentElement;
+                    navList.insertBefore(adminLinkLi, usernameElement);
+                }
+
+                // --- 3. Enforce Permissions: Show/Hide Tool Cards ---
+                const allToolCards = document.querySelectorAll('[data-tool-identifier]');
+
+                allToolCards.forEach(card => {
+                    const toolId = card.dataset.toolIdentifier;
+                    // Check if the user's accessible tools list includes this card's identifier
+                    if (accessible_tools.includes(toolId)) {
+                        card.style.display = 'block'; // Show the card
+                    } else {
+                        card.style.display = 'none'; // Hide the card
+                    }
+                });
+
+                // --- 4. Setup Logout Button ---
+                document.getElementById('logout-btn').addEventListener('click', () => {
+                    localStorage.removeItem('jwtToken');
+                    window.location.href = '/index.html';
+                });
+
+            } catch (error) {
+                // Catch any network errors or other issues
+                console.error('Error on dashboard:', error);
+                localStorage.removeItem('jwtToken');
+                window.location.href = '/index.html';
+            }
+        });
+    </script>
+</body>
+</html>
