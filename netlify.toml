@@ -1,0 +1,33 @@
+# The final, correct, and complete netlify.toml file
+
+[build]
+  publish = "public"
+  functions = "netlify/functions"
+  command = "# No build command needed"
+
+# This plugin ensures your function dependencies from the root package.json are installed.
+[[plugins]]
+  package = "@netlify/plugin-functions-install-core"
+
+# --- API Redirects ---
+# These rules point the API calls to the now top-level function files.
+[[redirects]]
+  from = "/api/admin/get-company-admin-data"
+  to = "/.netlify/functions/get-company-admin-data"
+  status = 200
+
+[[redirects]]
+  from = "/api/admin/update-company-defaults"
+  to = "/.netlify/functions/update-company-defaults"
+  status = 200
+
+[[redirects]]
+  from = "/api/admin/update-user-tools"
+  to = "/.netlify/functions/update-user-tools"
+  status = 200
+
+# This rule handles all other non-admin functions
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200

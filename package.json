@@ -1,0 +1,13 @@
+{
+  "name": "rcmbuddy-root",
+  "version": "1.0.0",
+  "description": "Dependencies for RCM Buddy project",
+  "private": true,
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "busboy": "^1.6.0",
+    "exceljs": "^4.4.0",
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.11.3"
+  }
+}
