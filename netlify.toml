@@ -1,9 +1,0 @@
-# netlify.toml
-[build]
-  # We need to run `npm install` because our function has a dependency (the 'pg' driver).
-  command = "npm install"
-  functions = "netlify/functions"
-
-[functions]
-  # Use the esbuild bundler for modern Node.js features.
-  node_bundler = "esbuild"
