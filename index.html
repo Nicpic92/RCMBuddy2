@@ -1,51 +1,35 @@
+<!-- index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Spreadsheet Tools Login</title>
-    <link rel="stylesheet" href="style.css">
-    <!-- This script pulls in the Netlify Identity Widget -->
+    <!-- This script adds the Netlify Identity Widget -->
     <script type="text/javascript" src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
 </head>
 <body>
     <header>
-        <h1>Welcome to Custom Spreadsheet Tools</h1>
+        <h1>Custom Spreadsheet Tools</h1>
         <p>Log in or sign up to get access.</p>
+        <!-- This div is where the login/logout buttons will appear -->
         <div data-netlify-identity-menu></div>
     </header>
 
     <main>
         <h2>Your Dashboard</h2>
-        <p id="user-status">You are not logged in.</p>
-        <div id="spreadsheet-tools" style="display: none;">
-            <p>Here are your available tools...</p>
-            <!-- Your tool list will go here -->
-        </div>
+        <p id="user-status">Please log in to see your tools.</p>
     </main>
 
     <script>
-        // Simple script to show user status
-        const userStatus = document.getElementById('user-status');
-        const toolSection = document.getElementById('spreadsheet-tools');
-
-        netlifyIdentity.on('login', user => {
-            userStatus.textContent = `Welcome, ${user.email}!`;
-            toolSection.style.display = 'block';
-            console.log({ user });
-        });
-
-        netlifyIdentity.on('logout', () => {
-            userStatus.textContent = 'You have been logged out.';
-            toolSection.style.display = 'none';
-        });
-
-        netlifyIdentity.on('init', user => {
-            if (user) {
-                userStatus.textContent = `Welcome back, ${user.email}!`;
-                toolSection.style.display = 'block';
-            }
-        });
+      // This script updates the dashboard message based on login status
+      const userStatus = document.getElementById('user-status');
+      netlifyIdentity.on('login', user => {
+        userStatus.textContent = `Welcome, ${user.email}! Your tools are now available.`;
+      });
+      netlifyIdentity.on('logout', () => {
+        userStatus.textContent = 'You have been logged out.';
+      });
     </script>
 </body>
 </html>
